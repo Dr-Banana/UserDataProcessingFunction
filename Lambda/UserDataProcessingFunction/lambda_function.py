@@ -69,7 +69,7 @@ def lambda_handler(event, context):
 
             return {
                 'statusCode': 200,
-                'body': json.dumps({'content': processed_content})
+                'body': json.dumps({'result content': processed_content})
             }
         else:
             error_message = f'Invalid action: {action}'
