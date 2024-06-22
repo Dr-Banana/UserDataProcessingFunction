@@ -16,6 +16,11 @@ phases:
       - zip -g deployment_package.zip lambda_function.py || { echo 'Zipping lambda function failed'; exit 1; }
   post_build:
     commands:
+      - echo "Checking deployment package contents..."
+      - unzip -l deployment_package.zip
       - echo "Updating lambda Function..."
       - aws lambda update-function-code --function-name UserDataProcessingFunction --zip-file fileb://deployment_package.zip || { echo 'Updating Lambda function failed'; exit 1; }
       - echo "DONE!!"
+artifacts:
+  files:
+    - deployment_package.zip
