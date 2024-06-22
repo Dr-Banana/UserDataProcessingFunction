@@ -19,7 +19,7 @@ phases:
       - echo "Checking deployment package contents..."
       - unzip -l deployment_package.zip
       - echo "Updating lambda Function..."
-      - aws lambda update-function-code --function-name UserDataProcessingFunction --zip-file fileb://deployment_package.zip || { echo 'Updating Lambda function failed'; exit 1; }
+      - aws lambda update-function-code --function-name UserDataProcessingFunction --zip-file fileb://deployment_package.zip
       - echo "DONE!!"
 artifacts:
   files:
