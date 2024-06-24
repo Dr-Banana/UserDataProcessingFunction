@@ -12,6 +12,7 @@ phases:
       - cd lib
       - zip -r9 ../deployment_package.zip .
       - cd ..
+      - zip -r deployment_package.zip config handlers utils
       - zip -g deployment_package.zip lambda_function.py
   post_build:
     commands:
