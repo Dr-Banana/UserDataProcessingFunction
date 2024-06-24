@@ -84,5 +84,4 @@
 #             'statusCode': 500,
 #             'body': json.dumps({'error': 'Error processing request', 'details': str(e)})
 #         }
-
 print(1)
