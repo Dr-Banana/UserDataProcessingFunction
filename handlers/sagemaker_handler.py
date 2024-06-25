@@ -1,23 +1,29 @@
-# handlers/sagemaker_handler.py
-
 import boto3
 import json
+import logging
+from config import ENDPOINT_NAME
 
-class SageMakerHandler:
-    def __init__(self, endpoint_name):
-        self.runtime = boto3.client('runtime.sagemaker')
-        self.endpoint_name = endpoint_name
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-    def predict(self, input_data):
-        try:
-            payload = json.dumps(input_data)
-            response = self.runtime.invoke_endpoint(
-                EndpointName=self.endpoint_name,
-                ContentType='application/json',
-                Body=payload,
-                CustomAttributes='accept_eula=true'
-            )
-            response_content = response['Body'].read().decode('utf-8')
-            return json.loads(response_content)
-        except Exception as e:
-            raise RuntimeError(f"Error calling SageMaker endpoint: {str(e)}")
+runtime = boto3.client('runtime.sagemaker')
+
+def call_sagemaker(input_data_json):
+    response = runtime.invoke_endpoint(
+        EndpointName=ENDPOINT_NAME,
+        ContentType='application/json',
+        Body=json.dumps(input_data_json),
+        CustomAttributes='accept_eula=true'
+    )
+
+    response_content = response['Body'].read().decode('utf-8')
+    result = json.loads(response_content)
+    
+    # 检查是否需要提问
+    if 'incomplete' in result:
+        return {
+            'needs_confirmation': True,
+            'question': result['incomplete']['question']
+        }
+
+    return result

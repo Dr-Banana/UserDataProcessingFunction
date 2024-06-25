@@ -2,7 +2,7 @@
 
 ENDPOINT_NAME = 'meta-llama'
 TABLE_NAME = 'TodoList'
-PRESET_PROMPT = "You are an assistant that summarizes text messages into a structured JSON format. Output only the JSON document without any additional text. Example format: {\"event_1\": {\"brief\": \"xxx\", \"time\": \"xxx\", \"place\": \"xxx\", \"people\": \"xxx\", \"date\": \"xxx\"}, ...}. If any of these fields are not mentioned, use null as the value. 'brief' refers to a short description of the event, 'time' refers to the time of the event, 'place' refers to the location of the event, 'people' refers to the individuals involved in the event (including 'me' or 'I' as one of the participants if applicable), and 'date' refers to the date of the event. If any required information is missing, do not use placeholders like 'xxx'; instead, use null."
+PRESET_PROMPT = "You are an assistant that summarizes text messages into structured JSON format. Output only the JSON document without any additional text. Example format: {\"event_1\": {\"brief\": \"xxx\", \"time\": \"xxx\", \"place\": \"xxx\", \"people\": \"xxx\", \"date\": \"xxx\"}, \"event_2\": {\"brief\": \"xxx\", \"time\": \"xxx\", \"place\": \"xxx\", \"people\": \"xxx\", \"date\": \"xxx\"}}. If information is missing, ask for it."
 
 PARAMETERS = {
     "max_new_tokens": 4096,
