@@ -1,8 +1,9 @@
 import json
 import logging
-from config import PRESET_PROMPT, PARAMETERS
+from config import PRESET_PROMPT, PARAMETERS, ENDPOINT_NAME, TABLE_NAME
 from handlers.sagemaker_handler import call_sagemaker
 from handlers.dynamodb_handler import save_to_dynamodb
+from handlers.s3_handler import upload_to_s3, download_from_s3
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -38,7 +39,11 @@ def lambda_handler(event, context):
             
             result = call_sagemaker(input_data_json)
             logger.info('Raw SageMaker result: %s', result)
-
+            
+            # 将初始结果上传到S3
+            s3_key = f'{user_id}_todolist.json'
+            upload_to_s3(json.dumps(result), s3_key)
+            
             # 检查结果是否需要进一步提问
             if 'needs_confirmation' in result:
                 return {
@@ -46,7 +51,7 @@ def lambda_handler(event, context):
                     'body': json.dumps(result)
                 }
 
-            # 将结果保存到DynamoDB
+            # 将最终结果保存到DynamoDB
             save_to_dynamodb(user_id, result)
             logger.info('Saved result to DynamoDB for UserID: %s', user_id)
             
