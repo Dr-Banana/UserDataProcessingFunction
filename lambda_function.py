@@ -1,6 +1,6 @@
 import json
 import logging
-from config import PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
+from config.config import PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
 from config.templates import get_input_data_json
 from handlers.sagemaker_handler import call_sagemaker
 from handlers.dynamodb_handler import save_to_dynamodb

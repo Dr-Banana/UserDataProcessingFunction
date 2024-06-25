@@ -9,3 +9,5 @@ PARAMETERS = {
     "top_p": 0.9,
     "temperature": 0.6
 }
+
+OUTPUT_BUCKET_NAME = "userdata-processing-output"
