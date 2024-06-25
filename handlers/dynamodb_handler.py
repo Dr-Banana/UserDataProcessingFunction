@@ -2,11 +2,11 @@ import boto3
 import json
 from boto3.dynamodb.conditions import Key
 
+# Initialize DynamoDB resource
 dynamodb = boto3.resource('dynamodb')
-from config import TABLE_NAME
 
 def save_to_dynamodb(user_id, result):
-    table = dynamodb.Table(TABLE_NAME)
+    table = dynamodb.Table('TodoList')  # 确认表名是否正确
     response = table.update_item(
         Key={'UserID': user_id},
         UpdateExpression="SET TodoList = :t",
