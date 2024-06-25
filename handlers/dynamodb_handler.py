@@ -1,15 +1,19 @@
+# handlers/dynamodb_handler.py
+
 import boto3
-import json
-from boto3.dynamodb.conditions import Key
 
-# Initialize DynamoDB resource
-dynamodb = boto3.resource('dynamodb')
+class DynamoDBHandler:
+    def __init__(self, table_name):
+        self.table_name = table_name
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(table_name)
 
-def save_to_dynamodb(user_id, result):
-    table = dynamodb.Table('TodoList')  # 确认表名是否正确
-    response = table.update_item(
-        Key={'UserID': user_id},
-        UpdateExpression="SET TodoList = :t",
-        ExpressionAttributeValues={':t': result}
-    )
-    return response
+    def update_item(self, user_id, content):
+        try:
+            self.table.update_item(
+                Key={'UserID': user_id},
+                UpdateExpression="SET TodoList = :t",
+                ExpressionAttributeValues={':t': content}
+            )
+        except Exception as e:
+            raise RuntimeError(f"Error saving to DynamoDB: {str(e)}")

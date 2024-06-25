@@ -3,12 +3,14 @@
 import boto3
 import json
 
-s3 = boto3.client('s3')
+class S3Handler:
+    def __init__(self):
+        self.s3 = boto3.client('s3')
 
-def save_to_s3(bucket_name, key, content):
-    try:
-        s3.put_object(Bucket=bucket_name, Key=key, Body=json.dumps(content), ContentType='application/json')
-        return True
-    except Exception as e:
-        print(f"Error saving to S3: {str(e)}")
-        return False
+    def get_json_file(self, bucket, key):
+        try:
+            response = self.s3.get_object(Bucket=bucket, Key=key)
+            data = response['Body'].read().decode('utf-8')
+            return json.loads(data)
+        except Exception as e:
+            raise RuntimeError(f"Error getting object from S3: {str(e)}")
