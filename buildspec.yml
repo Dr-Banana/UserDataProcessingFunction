@@ -8,7 +8,9 @@ phases:
       - pip install -r requirements.txt -t lib
   build:
     commands:
-      - echo "Zipping deployment package..."
+      - echo "Running tests..."
+      - pytest tests/test_lambda_function.py
+      - echo "Tests completed. Zipping deployment package..."
       - cd lib
       - zip -r9 ../deployment_package.zip .
       - cd ..

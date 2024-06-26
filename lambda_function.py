@@ -47,7 +47,6 @@ def lambda_handler(event, context):
                     'body': json.dumps({'error': str(e)})
                 }
 
-            # 检查是否有跟进问题
             # 将清理后的结果保存到 S3
             s3_key = f"{user_id}/result.json"
             save_to_s3(OUTPUT_BUCKET_NAME, s3_key, json.dumps(processed_content))
