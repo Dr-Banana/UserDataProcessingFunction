@@ -26,7 +26,7 @@ def lambda_handler(event, context):
             return handle_predict(input_text, user_id)
         
         elif action == 'test':
-            return generate_response(200, {'message': 'API connection test successful', 'input_text': input_text, 'UserID': user_id})
+            return generate_response(200, {'message': 'API connection test successful'})
         
         else:
             return generate_response(400, {'error': f'Invalid action: {action}'})
