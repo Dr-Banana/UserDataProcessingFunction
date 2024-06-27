@@ -20,9 +20,8 @@ class TestLambdaFunction(unittest.TestCase):
 
     def setUp(self):
         try:
-            # 设置集成测试所需的 API Gateway 客户端
             self.api_client = boto3.client('apigateway', region_name='us-east-1')
-            self.api_id = os.environ.get('API_GATEWAY_ID', '6inctbtbvk')
+            self.api_id = os.environ.get('API_GATEWAY_ID', '6inctbtbvk').split(':')[-1]  # 只取最后一部分
             self.stage_name = os.environ.get('API_STAGE_NAME', 'dev')
             self.resource_path = '/UserDataProcessingFunction'
             logger.info(f"Setup completed. API ID: {self.api_id}, Stage: {self.stage_name}")
@@ -93,11 +92,11 @@ class TestLambdaFunction(unittest.TestCase):
 
     def get_resource_id(self):
         try:
-            # 获取资源 ID
             logger.info(f"Getting resources for API ID: {self.api_id}")
             resources = self.api_client.get_resources(restApiId=self.api_id)
-            logger.info(f"Resources retrieved: {resources}")
+            logger.info(f"Resources retrieved: {json.dumps(resources, default=str)}")
             for item in resources['items']:
+                logger.info(f"Checking resource: {item}")
                 if item.get('path') == self.resource_path:
                     logger.info(f"Resource ID found: {item['id']}")
                     return item['id']
