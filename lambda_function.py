@@ -16,7 +16,7 @@ def lambda_handler(event, context):
         body = parse_event(event)
         input_text = body.get('input_text', '')
         user_id = body.get('UserID', '')
-        action = body.get('action', 'predict')
+        action = body.get('action', '')
         
         if not input_text or not user_id:
             return generate_response(400, {'error': f'Invalid input: input_text={input_text}, UserID={user_id}'})
