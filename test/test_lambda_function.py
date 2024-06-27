@@ -1,83 +1,126 @@
+import sys
+import os
 import json
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest import TestCase
+from unittest.mock import MagicMock, patch
 import boto3
-import os
-import logging
+import moto
 from botocore.exceptions import ClientError
 
-# 设置日志
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# 添加项目根目录到 Python 路径
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lambda_function import lambda_handler
 
-class TestLambdaFunction(unittest.TestCase):
+@moto.mock_apigateway
+class TestLambdaFunction(TestCase):
+    """
+    Test class for the UserDataProcessingFunction Lambda
+    """
 
     def setUp(self):
-        try:
-            self.api_client = boto3.client('apigateway', region_name='us-east-1')
-            self.api_id = '6inctbtbvk'  # 直接使用正确的 API ID
-            self.stage_name = 'dev'
-            self.resource_path = '/UserDataProcessingFunction'
-            logger.info(f"Setup completed. API ID: {self.api_id}, Stage: {self.stage_name}")
-        except Exception as e:
-            logger.error(f"Error in setUp: {str(e)}")
-            raise
+        """
+        Set up test environment
+        """
+        self.api_id = '6inctbtbvk'
+        self.stage_name = 'dev'
+        self.resource_path = '/UserDataProcessingFunction'
+        
+        # 设置 moto mock
+        self.apigateway_mock = moto.mock_apigateway()
+        self.apigateway_mock.start()
+        
+        # 创建 API Gateway client
+        self.api_client = boto3.client('apigateway', region_name='us-east-1')
+        
+        # 创建模拟的 API
+        self.create_mock_api()
+
+    def create_mock_api(self):
+        """
+        Create a mock API in API Gateway
+        """
+        # 创建 API
+        api = self.api_client.create_rest_api(name='TestAPI')
+        self.api_id = api['id']
+        
+        # 获取根资源 ID
+        resources = self.api_client.get_resources(restApiId=self.api_id)
+        root_id = [resource for resource in resources['items'] if resource['path'] == '/'][0]['id']
+        
+        # 创建资源
+        resource = self.api_client.create_resource(
+            restApiId=self.api_id,
+            parentId=root_id,
+            pathPart='UserDataProcessingFunction'
+        )
+        
+        # 创建方法
+        self.api_client.put_method(
+            restApiId=self.api_id,
+            resourceId=resource['id'],
+            httpMethod='POST',
+            authorizationType='NONE'
+        )
 
     def test_api_integration(self):
+        """
+        Test API integration
+        """
+        # 准备测试请求
+        test_request = {
+            "action": "test",
+            "input_text": "Test input",
+            "UserID": "test-user"
+        }
+
         try:
-            # 准备测试请求
-            test_request = {
-                "action": "test"
-            }
+            # 获取资源 ID
+            resources = self.api_client.get_resources(restApiId=self.api_id)
+            resource_id = next(resource['id'] for resource in resources['items'] if resource['path'] == self.resource_path)
 
-            logger.info(f"Attempting to get resource ID for path: {self.resource_path}")
-            resource_id = self.get_resource_id()
-            logger.info(f"Resource ID obtained: {resource_id}")
-
-            logger.info("Sending request to API Gateway")
-            # 发送请求到 API Gateway
+            # 调用 API
             response = self.api_client.test_invoke_method(
                 restApiId=self.api_id,
                 resourceId=resource_id,
                 httpMethod='POST',
-                pathWithQueryString=self.resource_path,
                 body=json.dumps(test_request)
             )
-
-            logger.info(f"API Gateway response status: {response['status']}")
-            logger.info(f"API Gateway response body: {response['body']}")
 
             # 验证响应
             self.assertEqual(response['status'], 200)
             body = json.loads(response['body'])
             self.assertEqual(body, {"message": "API connection test successful"})
-            logger.info("Integration test passed successfully")
-        except ClientError as e:
-            logger.error(f"AWS API error: {e.response['Error']['Message']}")
-            logger.error(f"Full error response: {json.dumps(e.response, default=str)}")
-            raise
-        except Exception as e:
-            logger.error(f"Error in integration test: {str(e)}")
-            raise
 
-    def get_resource_id(self):
-        try:
-            logger.info(f"Getting resources for API ID: {self.api_id}")
-            resources = self.api_client.get_resources(restApiId=self.api_id)
-            logger.info(f"Resources retrieved: {json.dumps(resources, default=str)}")
-            for item in resources['items']:
-                logger.info(f"Checking resource: {item}")
-                if item.get('path') == self.resource_path:
-                    logger.info(f"Resource ID found: {item['id']}")
-                    return item['id']
-            raise ValueError(f"Resource {self.resource_path} not found")
         except ClientError as e:
-            logger.error(f"AWS API error in get_resource_id: {e.response['Error']['Message']}")
-            logger.error(f"Full error response: {json.dumps(e.response, default=str)}")
-            raise
-        except Exception as e:
-            logger.error(f"Error in get_resource_id: {str(e)}")
-            raise
+            self.fail(f"API call failed: {str(e)}")
+
+    @patch('lambda_function.predict')
+    def test_lambda_handler(self, mock_predict):
+        """
+        Test lambda handler function
+        """
+        mock_predict.return_value = {"result": "mocked result"}
+
+        event = {
+            "body": json.dumps({
+                "action": "predict",
+                "input_text": "Test input",
+                "UserID": "test-user"
+            })
+        }
+
+        response = lambda_handler(event, None)
+
+        self.assertEqual(response['statusCode'], 200)
+        body = json.loads(response['body'])
+        self.assertEqual(body, {'content': {"result": "mocked result"}})
+
+    def tearDown(self):
+        """
+        Clean up test environment
+        """
+        self.apigateway_mock.stop()
 
 if __name__ == '__main__':
     unittest.main()
