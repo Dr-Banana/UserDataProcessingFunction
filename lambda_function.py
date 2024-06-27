@@ -14,17 +14,20 @@ def lambda_handler(event, context):
 
     try:
         body = parse_event(event)
-        input_text = body.get('input_text', '')
-        user_id = body.get('UserID', '')
-        action = body.get('action', '')
+        action = body.get('action', 'predict')
+
         
-        if not input_text or not user_id:
-            return generate_response(400, {'error': f'Invalid input: input_text={input_text}, UserID={user_id}'})
 
         if action == 'predict':
+            input_text = body.get('input_text', '')
+            user_id = body.get('UserID', '')
+            if not input_text or not user_id:
+                return generate_response(400, {'error': f'Invalid input: input_text={input_text}, UserID={user_id}'})
             return handle_predict(input_text, user_id)
+        
         elif action == 'test':
-            return handle_test()
+            return generate_response(200, {'message': 'API connection test successful', 'input_text': input_text, 'UserID': user_id})
+        
         else:
             return generate_response(400, {'error': f'Invalid action: {action}'})
     except Exception as e:
