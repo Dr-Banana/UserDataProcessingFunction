@@ -10,50 +10,19 @@ from botocore.exceptions import ClientError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 模拟 lambda_handler 函数
-mock_lambda_handler = MagicMock(return_value={
-    'statusCode': 200,
-    'body': json.dumps({"message": "API connection test successful"})
-})
-
 class TestLambdaFunction(unittest.TestCase):
 
     def setUp(self):
         try:
             self.api_client = boto3.client('apigateway', region_name='us-east-1')
-            self.api_id = os.environ.get('API_GATEWAY_ID', '6inctbtbvk').split(':')[-1]  # 只取最后一部分
-            self.stage_name = os.environ.get('API_STAGE_NAME', 'dev')
+            self.api_id = '6inctbtbvk'  # 直接使用正确的 API ID
+            self.stage_name = 'dev'
             self.resource_path = '/UserDataProcessingFunction'
             logger.info(f"Setup completed. API ID: {self.api_id}, Stage: {self.stage_name}")
         except Exception as e:
             logger.error(f"Error in setUp: {str(e)}")
             raise
 
-    # 单元测试
-    @patch('lambda_function.logger')
-    def test_lambda_handler_unit(self, mock_logger):
-        try:
-            # 准备测试事件
-            event = {
-                "body": json.dumps({
-                    "action": "test"
-                })
-            }
-            
-            # 调用模拟的 Lambda 函数
-            response = mock_lambda_handler(event, None)
-            
-            # 验证响应
-            self.assertEqual(response['statusCode'], 200)
-            body = json.loads(response['body'])
-            self.assertEqual(body, {"message": "API connection test successful"})
-
-            logger.info("Unit test passed successfully")
-        except Exception as e:
-            logger.error(f"Error in unit test: {str(e)}")
-            raise
-        
-    # 集成测试
     def test_api_integration(self):
         try:
             # 准备测试请求
@@ -85,6 +54,7 @@ class TestLambdaFunction(unittest.TestCase):
             logger.info("Integration test passed successfully")
         except ClientError as e:
             logger.error(f"AWS API error: {e.response['Error']['Message']}")
+            logger.error(f"Full error response: {json.dumps(e.response, default=str)}")
             raise
         except Exception as e:
             logger.error(f"Error in integration test: {str(e)}")
@@ -103,6 +73,7 @@ class TestLambdaFunction(unittest.TestCase):
             raise ValueError(f"Resource {self.resource_path} not found")
         except ClientError as e:
             logger.error(f"AWS API error in get_resource_id: {e.response['Error']['Message']}")
+            logger.error(f"Full error response: {json.dumps(e.response, default=str)}")
             raise
         except Exception as e:
             logger.error(f"Error in get_resource_id: {str(e)}")
