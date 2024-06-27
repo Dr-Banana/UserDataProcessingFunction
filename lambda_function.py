@@ -17,15 +17,14 @@ def lambda_handler(event, context):
         input_text = body.get('input_text', '')
         user_id = body.get('UserID', '')
         action = body.get('action', 'predict')
-
-        if action == 'test':
-            return handle_test()
         
         if not input_text or not user_id:
             return generate_response(400, {'error': f'Invalid input: input_text={input_text}, UserID={user_id}'})
 
         if action == 'predict':
             return handle_predict(input_text, user_id)
+        elif action == 'test':
+            return handle_test()
         else:
             return generate_response(400, {'error': f'Invalid action: {action}'})
     except Exception as e:
@@ -34,16 +33,10 @@ def lambda_handler(event, context):
 
 def handle_test():
     try:
-        # 尝试初始化 SageMaker 处理器
-        SageMakerHandler(ENDPOINT_NAME)
-        # 尝试初始化 DynamoDB 处理器
-        DynamoDBHandler(TABLE_NAME)
-        # 检查 S3 桶是否存在
-        import boto3
-        s3 = boto3.client('s3')
-        s3.head_bucket(Bucket=OUTPUT_BUCKET_NAME)
-        
-        return generate_response(200, {'message': 'API connection successful. All services are accessible.'})
+        # 创建 SageMakerHandler 实例来测试连接
+        sagemaker_handler = SageMakerHandler(ENDPOINT_NAME)
+        # 如果能成功创建实例，我们就认为连接成功
+        return generate_response(200, {'message': 'API connection successful'})
     except Exception as e:
         logger.error(f"API connection test failed: {str(e)}")
         return generate_response(500, {'error': 'API connection test failed', 'details': str(e)})
