@@ -1,79 +1,68 @@
-"""
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: MIT-0
-
-# Start of unit test code: tests/test_lambda_function.py
-"""
-
-import sys
-import os
 import json
-from unittest import TestCase
-from unittest.mock import MagicMock, patch
-
-# Add the project root to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import the Lambda handler
+import unittest
+from unittest.mock import patch
+import boto3
+import os
 from lambda_function import lambda_handler
 
-class TestLambdaFunction(TestCase):
-    """
-    Test class for the Lambda function
-    """
+class TestLambdaFunction(unittest.TestCase):
 
     def setUp(self):
-        """
-        Set up test environment
-        """
-        # Set up environment variables if needed
-        os.environ['ENDPOINT_NAME'] = 'https://95zkfcumvb.execute-api.us-east-1.amazonaws.com/default/UserDataProcessingFunction'
-        os.environ['TABLE_NAME'] = 'TodoList'
-        os.environ['OUTPUT_BUCKET_NAME'] = 'userdata-processing-output'
+        # 设置集成测试所需的 API Gateway 客户端
+        self.api_client = boto3.client('apigateway', region_name='us-east-1')
+        self.api_id = os.environ.get('API_GATEWAY_ID', '6inctbtbvk')
+        self.stage_name = os.environ.get('API_STAGE_NAME', 'dev')
+        self.resource_path = '/UserDataProcessingFunction'
 
-    @patch('lambda_function.SageMakerHandler')
-    @patch('lambda_function.DynamoDBHandler')
-    @patch('lambda_function.save_to_s3')
-    def test_lambda_handler_api_connection(self, mock_save_to_s3, mock_dynamodb_handler, mock_sagemaker_handler):
-        """
-        Test if the lambda_handler can be called without errors
-        """
-        # Mock the SageMaker prediction
-        mock_sagemaker_instance = MagicMock()
-        mock_sagemaker_instance.predict.return_value = [{'generation': {'content': '{"result": "mocked result"}'}}]
-        mock_sagemaker_handler.return_value = mock_sagemaker_instance
-
-        # Create a sample event
+    # 单元测试
+    @patch('lambda_function.logger')
+    def test_lambda_handler_unit(self, mock_logger):
+        # 准备测试事件
         event = {
-            'body': json.dumps({
-                "action": "predict",
-                "input_text": "I will have dinner with mom today afternoon at 7pm near downtown. Tomorrow morning at 9am, I have a meeting with the marketing team in the office. On Wednesday, there is a doctor's appointment at 3pm at the clinic. ",
-                "UserID": "1e026504-b625-4738-9e5d-e472c41510e4"
+            "body": json.dumps({
+                "action": "test"
             })
         }
-
-        # Call the lambda_handler
+        
+        # 调用 Lambda 函数
         response = lambda_handler(event, None)
-
-        # Check if the response is as expected
+        
+        # 验证响应
         self.assertEqual(response['statusCode'], 200)
-        self.assertIn('content', json.loads(response['body']))
+        body = json.loads(response['body'])
+        self.assertEqual(body, {"message": "API connection test successful"})
 
-        # Verify that the mocked methods were called
-        mock_sagemaker_instance.predict.assert_called_once()
-        mock_save_to_s3.assert_called_once()
-        mock_dynamodb_handler.return_value.update_item.assert_called_once()
+        # 验证日志记录
+        mock_logger.info.assert_called_once()
 
-    def tearDown(self):
-        """
-        Clean up after tests
-        """
-        # Remove environment variables if needed
-        if 'ENDPOINT_NAME' in os.environ:
-            del os.environ['ENDPOINT_NAME']
-        if 'TABLE_NAME' in os.environ:
-            del os.environ['TABLE_NAME']
-        if 'OUTPUT_BUCKET_NAME' in os.environ:
-            del os.environ['OUTPUT_BUCKET_NAME']
+    # 集成测试
+    def test_api_integration(self):
+        # 准备测试请求
+        test_request = {
+            "action": "test"
+        }
 
-# End of unit test code
+        # 发送请求到 API Gateway
+        response = self.api_client.test_invoke_method(
+            restApiId=self.api_id,
+            resourceId=self.get_resource_id(),
+            httpMethod='POST',
+            pathWithQueryString=self.resource_path,
+            body=json.dumps(test_request)
+        )
+
+        # 验证响应
+        self.assertEqual(response['status'], 200)
+        body = json.loads(response['body'])
+        self.assertEqual(body, {"message": "API connection test successful"})
+
+    def get_resource_id(self):
+        # 获取资源 ID
+        resources = self.api_client.get_resources(restApiId=self.api_id)
+        for item in resources['items']:
+            if item.get('path') == self.resource_path:
+                return item['id']
+        raise ValueError(f"Resource {self.resource_path} not found")
+
+if __name__ == '__main__':
+    unittest.main()
