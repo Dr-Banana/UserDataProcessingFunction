@@ -1,96 +1,68 @@
 import json
-from config.config import ENDPOINT_NAME, TABLE_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
-from config.templates import get_input_data_json
-from utils.logger import setup_logger
-from handlers.s3_handler import save_to_s3
-from handlers.sagemaker_handler import SageMakerHandler
-from handlers.dynamodb_handler import DynamoDBHandler
-from utils.json_processor import process_json
+import unittest
+from unittest.mock import patch
+import boto3
+import os
+from lambda_function import lambda_handler
 
-logger = setup_logger()
+class TestLambdaFunction(unittest.TestCase):
 
-def lambda_handler(event, context):
-    logger.info('Received event: %s', json.dumps(event))
+    def setUp(self):
+        # 设置集成测试所需的 API Gateway 客户端
+        self.api_client = boto3.client('apigateway', region_name='us-east-1')
+        self.api_id = os.environ.get('API_GATEWAY_ID', '6inctbtbvk')
+        self.stage_name = os.environ.get('API_STAGE_NAME', 'dev')
+        self.resource_path = '/UserDataProcessingFunction'
 
-    try:
-        body = parse_event(event)
-        action = body.get('action', 'predict')
-
+    # 单元测试
+    @patch('lambda_function.logger')
+    def test_lambda_handler_unit(self, mock_logger):
+        # 准备测试事件
+        event = {
+            "body": json.dumps({
+                "action": "test"
+            })
+        }
         
-
-        if action == 'predict':
-            input_text = body.get('input_text', '')
-            user_id = body.get('UserID', '')
-            if not input_text or not user_id:
-                return generate_response(400, {'error': f'Invalid input: input_text={input_text}, UserID={user_id}'})
-            return handle_predict(input_text, user_id)
+        # 调用 Lambda 函数
+        response = lambda_handler(event, None)
         
-        elif action == 'test':
-            return generate_response(200, {'message': 'API connection test successful'})
-        
-        else:
-            return generate_response(400, {'error': f'Invalid action: {action}'})
-    except Exception as e:
-        logger.error('Error processing request: %s', str(e))
-        return generate_response(500, {'error': 'Error processing request', 'details': str(e)})
+        # 验证响应
+        self.assertEqual(response['statusCode'], 200)
+        body = json.loads(response['body'])
+        self.assertEqual(body, {"message": "API connection test successful"})
 
-def handle_test():
-    try:
-        # 创建 SageMakerHandler 实例来测试连接
-        sagemaker_handler = SageMakerHandler(ENDPOINT_NAME)
-        # 如果能成功创建实例，我们就认为连接成功
-        return generate_response(200, {'message': 'API connection successful'})
-    except Exception as e:
-        logger.error(f"API connection test failed: {str(e)}")
-        return generate_response(500, {'error': 'API connection test failed', 'details': str(e)})
+        # 验证日志记录
+        mock_logger.info.assert_called_once()
 
+    # 集成测试
+    def test_api_integration(self):
+        # 准备测试请求
+        test_request = {
+            "action": "test"
+        }
 
-def parse_event(event):
-    return json.loads(event.get('body', '{}'))
+        # 发送请求到 API Gateway
+        response = self.api_client.test_invoke_method(
+            restApiId=self.api_id,
+            resourceId=self.get_resource_id(),
+            httpMethod='POST',
+            pathWithQueryString=self.resource_path,
+            body=json.dumps(test_request)
+        )
 
-def generate_response(status_code, body):
-    return {
-        'statusCode': status_code,
-        'body': json.dumps(body)
-    }
+        # 验证响应
+        self.assertEqual(response['status'], 200)
+        body = json.loads(response['body'])
+        self.assertEqual(body, {"message": "API connection test successful"})
 
-def handle_predict(input_text, user_id):
-    try:
-        processed_content = predict(input_text)
-        save_result_to_s3(user_id, processed_content)
-        save_result_to_dynamodb(user_id, processed_content)
-        return generate_response(200, {'content': processed_content})
-    except RuntimeError as e:
-        logger.error(str(e))
-        return generate_response(500, {'error': str(e)})
+    def get_resource_id(self):
+        # 获取资源 ID
+        resources = self.api_client.get_resources(restApiId=self.api_id)
+        for item in resources['items']:
+            if item.get('path') == self.resource_path:
+                return item['id']
+        raise ValueError(f"Resource {self.resource_path} not found")
 
-def predict(input_text):
-    sagemaker_handler = SageMakerHandler(ENDPOINT_NAME)
-    input_data_json = get_input_data_json(PRESET_PROMPT, input_text, PARAMETERS)
-    
-    try:
-        result = sagemaker_handler.predict(input_data_json)
-        logger.info('Raw SageMaker result: %s', result)  # 打印原始的 SageMaker 响应
-        processed_content = process_json(result)
-        return processed_content
-    except Exception as e:
-        logger.error(f"Error during prediction: {str(e)}")
-        raise RuntimeError(f"Prediction failed: {str(e)}")
-
-def save_result_to_s3(user_id, processed_content):
-    s3_key = f"{user_id}/result.json"
-    try:
-        save_to_s3(OUTPUT_BUCKET_NAME, s3_key, json.dumps(processed_content))
-        logger.info('Saved cleaned result to S3: %s/%s', OUTPUT_BUCKET_NAME, s3_key)
-    except Exception as e:
-        logger.error(f"Error saving to S3: {str(e)}")
-        raise RuntimeError(f"Saving to S3 failed: {str(e)}")
-
-def save_result_to_dynamodb(user_id, processed_content):
-    dynamodb_handler = DynamoDBHandler(TABLE_NAME)
-    try:
-        dynamodb_handler.update_item(user_id, processed_content)
-        logger.info('Saved result to DynamoDB for UserID: %s', user_id)
-    except Exception as e:
-        logger.error(f"Error saving to DynamoDB: {str(e)}")
-        raise RuntimeError(f"Saving to DynamoDB failed: {str(e)}")
+if __name__ == '__main__':
+    unittest.main()
