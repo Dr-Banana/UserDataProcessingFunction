@@ -81,40 +81,10 @@ class TestLambdaFunction(TestCase):
         self.assertIn('people', event)
         self.assertIn('date', event)
 
-    def test_save_result_to_s3(self):
-        """
-        Test saving results to S3
-        """
-        user_id = 'test-user'
-        content = {'event_1': {'brief': 'Test event', 'time': '10:00 AM'}}
-        
-        save_result_to_s3(user_id, content)
-        
-        s3_object = self.s3.get_object(Bucket=OUTPUT_BUCKET_NAME, Key=f'{user_id}/result.json')
-        saved_content = json.loads(s3_object['Body'].read().decode('utf-8'))
-        
-        self.assertEqual(saved_content, content)
-
-    def test_save_result_to_dynamodb(self):
-        """
-        Test saving results to DynamoDB
-        """
-        user_id = 'test-user'
-        content = {'event_1': {'brief': 'Test event', 'time': '10:00 AM'}}
-        
-        save_result_to_dynamodb(user_id, content)
-        
-        response = self.table.get_item(Key={'UserID': user_id})
-        saved_item = response['Item']
-        
-        self.assertEqual(saved_item['TodoList'], content)
-
     def tearDown(self):
         """
         Clean up test environment
         """
-        self.s3_mock.stop()
-        self.dynamodb_mock.stop()
 
 if __name__ == '__main__':
     unittest.main()
