@@ -6,13 +6,12 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 import boto3
 import moto
-from test.json_input import API_CONNECT_TEST
+import json_input
 
 # 添加项目根目录到 Python 路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lambda_function import lambda_handler
 
-@moto.mock_apigateway
 class TestLambdaFunction(TestCase):
     """
     Test class for the UserDataProcessingFunction Lambda
@@ -31,7 +30,7 @@ class TestLambdaFunction(TestCase):
         Test API connection test functionality
         """
         # 使用 API_CONNECT_TEST 数据
-        event = API_CONNECT_TEST
+        event = json_input.API_CONNECT_TEST
 
         # 调用 lambda_handler
         response = lambda_handler(event, None)
