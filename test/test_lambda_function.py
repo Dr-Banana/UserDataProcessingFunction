@@ -5,14 +5,19 @@ import unittest
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 import boto3
-from moto import mock_s3, mock_dynamodb
+from moto.s3 import mock_s3
+from moto.dynamodb import mock_dynamodb
 from test.json_input import ENDPOINT_CONNECT_TEST, LLAMA_RESPONSE_TEST
 
 # 添加项目根目录到 Python 路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lambda_function import lambda_handler, predict, save_result_to_s3, save_result_to_dynamodb
 from config.config import OUTPUT_BUCKET_NAME, TABLE_NAME
+from moto.sagemaker import mock_sagemaker
 
+@mock_sagemaker
+@mock_s3
+@mock_dynamodb
 class TestLambdaFunction(TestCase):
     """
     Test class for the UserDataProcessingFunction Lambda
@@ -22,12 +27,6 @@ class TestLambdaFunction(TestCase):
         """
         Set up test environment
         """
-        # 设置 moto mock
-        self.s3_mock = mock_s3()
-        self.dynamodb_mock = mock_dynamodb()
-        self.s3_mock.start()
-        self.dynamodb_mock.start()
-
         # 创建模拟的 S3 bucket
         self.s3 = boto3.client('s3', region_name='us-east-1')
         self.s3.create_bucket(Bucket=OUTPUT_BUCKET_NAME)
