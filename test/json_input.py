@@ -1,1 +1,1 @@
-API_CONNECT_TEST = {"body": "{\r\n    \"action\": \"test\"\r\n}\r\n"}
+ENDPOINT_CONNECT_TEST = {"body": "{\r\n    \"action\": \"test\"\r\n}\r\n"}
