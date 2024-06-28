@@ -2,3 +2,4 @@ boto3
 pytest
 requests
 moto>=3.0.7
+aws_lambda_powertools
