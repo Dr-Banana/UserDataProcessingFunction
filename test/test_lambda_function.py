@@ -32,10 +32,29 @@ class TestLambdaFunction(TestCase):
         event = ENDPOINT_CONNECT_TEST
         response = lambda_handler(event, None)
 
-        # 验证响应
-        self.assertEqual(response['statusCode'], 200)
-        body = json.loads(response['body'])
-        self.assertEqual(body, {'message': 'ENDPOINT connection test successful'})
+        try:
+            # 验证状态码
+            self.assertEqual(response['statusCode'], 200, 
+                f"Endpoint connection failed. Expected status code 200, but got {response['statusCode']}. "
+                "This likely indicates an issue with the endpoint connection.")
+
+            # 解析并验证响应体
+            body = json.loads(response['body'])
+            self.assertEqual(body, {'message': 'ENDPOINT connection test successful'}, 
+                f"Unexpected response body. Got: {body}. "
+                "This suggests the endpoint is not responding as expected.")
+
+        except KeyError as e:
+            self.fail(f"Response is missing expected key: {e}. "
+                    "This could indicate a structural problem with the response.")
+        except json.JSONDecodeError:
+            self.fail(f"Failed to parse response body: {response.get('body', 'No body')}. "
+                    "The response body is not valid JSON.")
+        except AssertionError as e:
+            self.fail(f"Endpoint connection test failed: {str(e)}. "
+                    "Please check the endpoint configuration and ensure it's operational.")
+
+        print("Endpoint connection test passed successfully.")
 
     @patch('lambda_function.SageMakerHandler')
     def llama_predict(self, mock_sagemaker_handler):
