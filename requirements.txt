@@ -1,5 +1,5 @@
 boto3
 pytest
 requests
-moto[all]
+git+https://github.com/spulec/moto.git#egg=moto[all]
 aws_lambda_powertools
