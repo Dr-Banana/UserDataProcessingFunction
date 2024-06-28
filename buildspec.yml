@@ -5,12 +5,11 @@ phases:
       python: 3.10
     commands:
       - echo "Installing dependencies..."
-      - pip install boto3 moto pytest requests
-      - pip install -r requirements.txt -t lib
+      - pip install -r requirements.txt
   build:
     commands:
       - echo "Running tests..."
-      # - python -m unittest discover test
+      - python -m unittest test\test_lambda_function.py
       - echo "Zipping deployment package..."
       - mkdir package
       - pip install -r requirements.txt -t package

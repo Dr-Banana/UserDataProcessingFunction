@@ -55,7 +55,7 @@ def predict(input_text):
     
     try:
         result = sagemaker_handler.predict(input_data_json)
-        logger.info('Raw SageMaker result: %s', result)  # 打印原始的 SageMaker 响应
+        logger.info('Raw SageMaker result: %s', result)
         processed_content = process_json(result)
         return processed_content
     except Exception as e:
