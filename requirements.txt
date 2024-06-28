@@ -1,5 +1,5 @@
 boto3
 pytest
 requests
-moto>=5.0.9
+moto[all]
 aws_lambda_powertools
