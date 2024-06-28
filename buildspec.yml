@@ -14,10 +14,10 @@ phases:
       - mkdir package
       - pip install -r requirements.txt -t package
       - cd package
-      - zip -r9 ../deployment_package.zip .
+      - zip -r9q ../deployment_package.zip .
       - cd ..
-      - zip -r deployment_package.zip config handlers utils
-      - zip -g deployment_package.zip lambda_function.py
+      - zip -rq deployment_package.zip config handlers utils
+      - zip -gq deployment_package.zip lambda_function.py
   post_build:
     commands:
       - echo "Updating lambda Function..."
