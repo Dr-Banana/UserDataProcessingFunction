@@ -5,7 +5,7 @@ import unittest
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 import boto3
-import moto
+from moto import mock_s3, mock_dynamodb
 from test.json_input import ENDPOINT_CONNECT_TEST, LLAMA_RESPONSE_TEST
 
 # 添加项目根目录到 Python 路径
@@ -23,8 +23,8 @@ class TestLambdaFunction(TestCase):
         Set up test environment
         """
         # 设置 moto mock
-        self.s3_mock = moto.mock_s3()
-        self.dynamodb_mock = moto.mock_dynamodb()
+        self.s3_mock = mock_s3()
+        self.dynamodb_mock = mock_dynamodb()
         self.s3_mock.start()
         self.dynamodb_mock.start()
 
