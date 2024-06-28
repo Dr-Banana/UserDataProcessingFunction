@@ -13,7 +13,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lambda_function import lambda_handler, predict, save_result_to_s3, save_result_to_dynamodb
 from config.config import OUTPUT_BUCKET_NAME, TABLE_NAME
 
-@moto.mock_sagemaker
 @moto.mock_dynamodb
 @moto.mock_s3
 class TestLambdaFunction(TestCase):
