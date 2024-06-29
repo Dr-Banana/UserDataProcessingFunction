@@ -1,5 +1,5 @@
 boto3
 pytest
 requests
-git+https://github.com/spulec/moto.git#egg=moto[all]
+moto[dynamodb,s3,all]
 aws_lambda_powertools
