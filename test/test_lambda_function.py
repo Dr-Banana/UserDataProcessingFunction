@@ -24,9 +24,10 @@ class TestLambdaFunction(TestCase):
         """
         Set up test environment
         """
-        # 创建模拟的 S3 bucket
-        self.s3 = boto3.client('s3', region_name='us-east-1')
-        self.s3.create_bucket(Bucket=OUTPUT_BUCKET_NAME)
+        # 创建模拟的 S3 client 和 resource
+        self.s3_client = boto3.client('s3', region_name='us-east-1')
+        self.s3_resource = boto3.resource('s3', region_name='us-east-1')
+        self.s3_client.create_bucket(Bucket=OUTPUT_BUCKET_NAME)
 
         # 创建模拟的 DynamoDB 表
         self.dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
@@ -91,7 +92,7 @@ class TestLambdaFunction(TestCase):
         save_result_to_s3(user_id, content)
         
         # 验证文件是否被保存到 S3
-        s3_object = self.s3.get_object(Bucket=OUTPUT_BUCKET_NAME, Key=f'{user_id}/result.json')
+        s3_object = self.s3_client.get_object(Bucket=OUTPUT_BUCKET_NAME, Key=f'{user_id}/result.json')
         saved_content = json.loads(s3_object['Body'].read().decode('utf-8'))
         
         self.assertEqual(saved_content, content, "Content saved to S3 does not match the original content")
@@ -142,9 +143,8 @@ class TestLambdaFunction(TestCase):
         Clean up test environment
         """
         # 清理 S3 bucket
-        bucket = self.s3.Bucket(OUTPUT_BUCKET_NAME)
-        for key in bucket.objects.all():
-            key.delete()
+        bucket = self.s3_resource.Bucket(OUTPUT_BUCKET_NAME)
+        bucket.objects.all().delete()
         bucket.delete()
 
         # 清理 DynamoDB 表
