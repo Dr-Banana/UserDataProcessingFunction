@@ -1,5 +1,5 @@
 boto3
 pytest
 requests
-moto[dynamodb,s3,all]
+moto[all]
 aws_lambda_powertools
