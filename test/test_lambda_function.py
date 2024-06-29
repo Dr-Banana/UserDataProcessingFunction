@@ -13,8 +13,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lambda_function import lambda_handler, predict, save_result_to_s3, save_result_to_dynamodb
 from config.config import OUTPUT_BUCKET_NAME, TABLE_NAME
 
-# @mock_dynamodb
-# @mock_s3
+@mock_dynamodb
+@mock_s3
 class TestLambdaFunction(TestCase):
     """
     Test class for the UserDataProcessingFunction Lambda
