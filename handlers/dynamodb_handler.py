@@ -1,14 +1,15 @@
 # handlers/dynamodb_handler.py
 import json
 import boto3
+from config.config import CONVERSATION_TABLE_NAME
 
 class DynamoDBHandler:
-    def __init__(self, table_name, conversation_table_name):
+    def __init__(self, table_name):
         self.table_name = table_name
-        self.conversation_table_name = conversation_table_name
+        self.conversation_table_name = CONVERSATION_TABLE_NAME
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(table_name)
-        self.conversation_table = self.dynamodb.Table(conversation_table_name)
+        self.conversation_table = self.dynamodb.Table(CONVERSATION_TABLE_NAME)
 
     def update_item(self, user_id, content):
         try:
