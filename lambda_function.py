@@ -45,7 +45,7 @@ def handle_predict(input_text, user_id):
         conversation_id = str(uuid.uuid4())
         processed_content = predict(input_text)
 
-        dynamodb_handler = DynamoDBHandler(TABLE_NAME, CONVERSATION_TABLE_NAME)
+        dynamodb_handler = DynamoDBHandler(TABLE_NAME)
         dynamodb_handler.save_conversation(conversation_id, user_id)
 
         save_result_to_s3(user_id, conversation_id, processed_content)
