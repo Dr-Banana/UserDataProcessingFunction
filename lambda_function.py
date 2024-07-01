@@ -1,8 +1,10 @@
 import json
+import boto3
+import uuid
 from config.config import ENDPOINT_NAME, TABLE_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
 from config.templates import get_input_data_json
 from utils.logger import setup_logger
-from handlers.s3_handler import save_to_s3
+from handlers.s3_handler import save_to_s3, download_json_from_s3
 from handlers.sagemaker_handler import SageMakerHandler
 from handlers.dynamodb_handler import DynamoDBHandler
 from utils.json_processor import process_json
@@ -41,12 +43,16 @@ def generate_response(status_code, body):
 
 def handle_predict(input_text, user_id):
     try:
+        conversation_id = str(uuid.uuid4())
         processed_content = predict(input_text)
-        save_result_to_s3(user_id, processed_content)
-        save_result_to_dynamodb(user_id, processed_content)
-        return generate_response(200, {'content': processed_content})
+        save_result_to_s3(user_id, conversation_id, processed_content)
+
+        dynamodb_handler = DynamoDBHandler(TABLE_NAME)
+        dynamodb_handler.update_ongoing_conversation(user_id, conversation_id)
+
+        return handle_clarification(user_id, conversation_id, processed_content)
     except RuntimeError as e:
-        logger.error(str(e))
+        logger.error(f"Error during prediction: {str(e)}")
         return generate_response(500, {'error': str(e)})
 
 def predict(input_text):
@@ -62,8 +68,8 @@ def predict(input_text):
         logger.error(f"Error during prediction: {str(e)}")
         raise RuntimeError(f"Prediction failed: {str(e)}")
 
-def save_result_to_s3(user_id, processed_content):
-    s3_key = f"{user_id}/result.json"
+def save_result_to_s3(user_id, conversation_id, processed_content):
+    s3_key = f"{user_id}/{conversation_id}.json"
     try:
         save_to_s3(OUTPUT_BUCKET_NAME, s3_key, json.dumps(processed_content))
         logger.info('Saved cleaned result to S3: %s/%s', OUTPUT_BUCKET_NAME, s3_key)
@@ -79,3 +85,31 @@ def save_result_to_dynamodb(user_id, processed_content):
     except Exception as e:
         logger.error(f"Error saving to DynamoDB: {str(e)}")
         raise RuntimeError(f"Saving to DynamoDB failed: {str(e)}")
+    
+def handle_clarification(user_id, conversation_id, processed_content):
+    """
+    检查预测结果中是否存在缺失的信息,并向用户请求补充信息。
+    """
+    missing_fields = []
+    for event in processed_content.values():
+        for field in ['brief', 'time', 'place', 'people', 'date']:
+            if event[field] is None:
+                missing_fields.append(field)
+
+    if missing_fields:
+        # 从 S3 下载当前对话的结果
+        s3_key = f"{user_id}/{conversation_id}.json"
+        s3_client = boto3.client('s3')
+        current_content = json.loads(download_json_from_s3(s3_client, OUTPUT_BUCKET_NAME, s3_key))
+
+        # 返回当前结果和缺失的信息
+        return generate_response(200, {'missing_fields': missing_fields, 'current_content': current_content})
+    else:
+        # 更新 DynamoDB 表,删除当前用户的未完成对话 ID
+        dynamodb_handler = DynamoDBHandler(TABLE_NAME)
+        dynamodb_handler.remove_ongoing_conversation(user_id)
+
+        # 保存最终结果到 S3 和 DynamoDB
+        save_result_to_s3(user_id, conversation_id, processed_content)
+        save_result_to_dynamodb(user_id, processed_content)
+        return generate_response(200, {'content': processed_content})
