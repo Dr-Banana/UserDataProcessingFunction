@@ -1,5 +1,4 @@
 import json
-import uuid
 from config.config import ENDPOINT_NAME, TABLE_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
 from config.templates import get_input_data_json
 from utils.logger import setup_logger
@@ -42,10 +41,7 @@ def generate_response(status_code, body):
 
 def handle_predict(input_text, user_id):
     try:
-        conversation_id = str(uuid.uuid4())
         processed_content = predict(input_text)
-        dynamodb_handler = DynamoDBHandler(TABLE_NAME)
-        dynamodb_handler.save_conversation(conversation_id, user_id)
         save_result_to_s3(user_id, processed_content)
         save_result_to_dynamodb(user_id, processed_content)
         return generate_response(200, {'content': processed_content})
