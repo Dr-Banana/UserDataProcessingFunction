@@ -83,20 +83,18 @@ class TestLambdaFunction(TestCase):
         self.assertIn('date', event)
 
     def test_save_result_to_s3(self):
-        """
-        Test saving results to S3
-        """
         user_id = 'test-user'
+        conversation_id = 'test-conversation-id'
         content = {'event_1': {'brief': 'Test event', 'time': '10:00', 'place': 'Office', 'people': 'Team', 'date': '2024-06-28'}}
         
-        save_result_to_s3(user_id, content)
+        save_result_to_s3(user_id, conversation_id, content)
         
         # 验证文件是否被保存到 S3
-        s3_object = self.s3_client.get_object(Bucket=OUTPUT_BUCKET_NAME, Key=f'{user_id}/result.json')
+        s3_object = self.s3_client.get_object(Bucket=OUTPUT_BUCKET_NAME, Key=f'{user_id}/{conversation_id}.json')
         saved_content = json.loads(s3_object['Body'].read().decode('utf-8'))
         
         self.assertEqual(saved_content, content, "Content saved to S3 does not match the original content")
-
+        
     def test_save_result_to_dynamodb(self):
         """
         Test saving results to DynamoDB
@@ -119,7 +117,7 @@ class TestLambdaFunction(TestCase):
         Test the entire predict handling process
         """
         mock_predict.return_value = {'event_1': {'brief': 'Test event', 'time': '10:00', 'place': 'Office', 'people': 'Team', 'date': '2024-06-28'}}
-        
+    
         event = {
             'body': json.dumps({
                 'action': 'predict',
@@ -132,10 +130,11 @@ class TestLambdaFunction(TestCase):
         
         self.assertEqual(response['statusCode'], 200)
         body = json.loads(response['body'])
-        self.assertIn('content', body)
+        self.assertIn('missing_fields', body)
+        self.assertIn('current_content', body)
         
         mock_predict.assert_called_once_with('Schedule a team meeting')
-        mock_save_s3.assert_called_once()
+        mock_save_s3.assert_called()  # 两次调用
         mock_save_dynamodb.assert_called_once()
 
     def tearDown(self):
