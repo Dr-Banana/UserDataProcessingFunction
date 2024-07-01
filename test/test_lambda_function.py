@@ -11,8 +11,7 @@ from test.json_input import ENDPOINT_CONNECT_TEST, LLAMA_RESPONSE_TEST
 # 添加项目根目录到 Python 路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lambda_function import lambda_handler, predict, save_result_to_s3, save_result_to_dynamodb
-from config.config import OUTPUT_BUCKET_NAME, TABLE_NAME
-
+from config.config import OUTPUT_BUCKET_NAME, TODO_TABLE_NAME
 @mock_dynamodb
 @mock_s3
 class TestLambdaFunction(TestCase):
@@ -32,7 +31,7 @@ class TestLambdaFunction(TestCase):
         # 创建模拟的 DynamoDB 表
         self.dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
         self.table = self.dynamodb.create_table(
-            TableName=TABLE_NAME,
+            TableName=TODO_TABLE_NAME,
             KeySchema=[{'AttributeName': 'UserID', 'KeyType': 'HASH'}],
             AttributeDefinitions=[{'AttributeName': 'UserID', 'AttributeType': 'S'}],
             BillingMode='PAY_PER_REQUEST'
