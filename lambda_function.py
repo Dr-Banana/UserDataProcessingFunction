@@ -1,6 +1,6 @@
 import json
 import uuid
-from config.config import ENDPOINT_NAME, TABLE_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME, CONVERSATION_TABLE_NAME
+from config.config import ENDPOINT_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME, CONVERSATION_TABLE_NAME
 from config.templates import get_input_data_json
 from utils.logger import setup_logger
 from handlers.s3_handler import save_to_s3

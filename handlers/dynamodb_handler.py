@@ -1,20 +1,20 @@
 # handlers/dynamodb_handler.py
-from config.config import OUTPUT_BUCKET_NAME, CONVERSATION_TABLE_NAME
+from config.config import TODO_TABLE_NAME, CONVERSATION_TABLE_NAME
 import boto3
 
 class DynamoDBHandler:
     def __init__(self):
         self.dynamodb = boto3.resource('dynamodb')
 
-        self.table_name = OUTPUT_BUCKET_NAME
-        self.table = self.dynamodb.Table(OUTPUT_BUCKET_NAME)
+        self.todo_table_name = TODO_TABLE_NAME
+        self.todo_table = self.dynamodb.Table(TODO_TABLE_NAME)
 
         self.conver_table_name = CONVERSATION_TABLE_NAME
         self.conver_table = self.dynamodb.Table(CONVERSATION_TABLE_NAME)
 
     def update_item(self, user_id, content):
         try:
-            self.table.update_item(
+            self.todo_table.update_item(
                 Key={'UserID': user_id},
                 UpdateExpression="SET TodoList = :t",
                 ExpressionAttributeValues={':t': content}

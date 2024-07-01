@@ -10,5 +10,5 @@ PARAMETERS = {
 }
 
 OUTPUT_BUCKET_NAME = "userdata-processing-output"
-TABLE_NAME = 'TodoList'
+TODO_TABLE_NAME = 'TodoList'
 CONVERSATION_TABLE_NAME = 'Conversation'
