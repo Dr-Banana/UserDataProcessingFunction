@@ -1,12 +1,16 @@
 # handlers/dynamodb_handler.py
-
+from config.config import OUTPUT_BUCKET_NAME, CONVERSATION_TABLE_NAME
 import boto3
 
 class DynamoDBHandler:
-    def __init__(self, table_name):
-        self.table_name = table_name
+    def __init__(self):
         self.dynamodb = boto3.resource('dynamodb')
-        self.table = self.dynamodb.Table(table_name)
+
+        self.table_name = OUTPUT_BUCKET_NAME
+        self.table = self.dynamodb.Table(OUTPUT_BUCKET_NAME)
+
+        self.conver_table_name = CONVERSATION_TABLE_NAME
+        self.conver_table = self.dynamodb.Table(CONVERSATION_TABLE_NAME)
 
     def update_item(self, user_id, content):
         try:
@@ -17,3 +21,15 @@ class DynamoDBHandler:
             )
         except Exception as e:
             raise RuntimeError(f"Error saving to DynamoDB: {str(e)}")
+
+    def save_conversation_id(self, conversation_id, user_id):
+        try:
+            self.conver_table.put_item(
+                Item={
+                    'ConversationID': conversation_id,
+                    'UserID': user_id
+                }
+            )
+            return True
+        except Exception as e:
+            raise RuntimeError(f"Error saving conversation to DynamoDB: {str(e)}")

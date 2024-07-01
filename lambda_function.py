@@ -1,5 +1,6 @@
 import json
-from config.config import ENDPOINT_NAME, TABLE_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
+import uuid
+from config.config import ENDPOINT_NAME, TABLE_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME, CONVERSATION_TABLE_NAME
 from config.templates import get_input_data_json
 from utils.logger import setup_logger
 from handlers.s3_handler import save_to_s3
@@ -8,6 +9,7 @@ from handlers.dynamodb_handler import DynamoDBHandler
 from utils.json_processor import process_json
 
 logger = setup_logger()
+dynamodb_handler = DynamoDBHandler()
 
 def lambda_handler(event, context):
     logger.info('Received event: %s', json.dumps(event))
@@ -41,7 +43,9 @@ def generate_response(status_code, body):
 
 def handle_predict(input_text, user_id):
     try:
+        conversation_id = str(uuid.uuid4())
         processed_content = predict(input_text)
+        dynamodb_handler.save_conversation_id(conversation_id, user_id)
         save_result_to_s3(user_id, processed_content)
         save_result_to_dynamodb(user_id, processed_content)
         return generate_response(200, {'content': processed_content})
@@ -72,7 +76,6 @@ def save_result_to_s3(user_id, processed_content):
         raise RuntimeError(f"Saving to S3 failed: {str(e)}")
 
 def save_result_to_dynamodb(user_id, processed_content):
-    dynamodb_handler = DynamoDBHandler(TABLE_NAME)
     try:
         dynamodb_handler.update_item(user_id, processed_content)
         logger.info('Saved result to DynamoDB for UserID: %s', user_id)
