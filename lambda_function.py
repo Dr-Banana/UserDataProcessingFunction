@@ -1,5 +1,6 @@
 import json
-from config.config import ENDPOINT_NAME, TABLE_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
+import uuid
+from config.config import ENDPOINT_NAME, TABLE_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME, CONVERSATION_TABLE_NAME
 from config.templates import get_input_data_json
 from utils.logger import setup_logger
 from handlers.s3_handler import save_to_s3
@@ -41,12 +42,17 @@ def generate_response(status_code, body):
 
 def handle_predict(input_text, user_id):
     try:
+        conversation_id = str(uuid.uuid4())
         processed_content = predict(input_text)
-        save_result_to_s3(user_id, processed_content)
-        save_result_to_dynamodb(user_id, processed_content)
+
+        dynamodb_handler = DynamoDBHandler(TABLE_NAME, CONVERSATION_TABLE_NAME)
+        dynamodb_handler.save_conversation(conversation_id, user_id)
+
+        save_result_to_s3(user_id, conversation_id, processed_content)
+
         return generate_response(200, {'content': processed_content})
     except RuntimeError as e:
-        logger.error(str(e))
+        logger.error(f"Error during prediction: {str(e)}")
         return generate_response(500, {'error': str(e)})
 
 def predict(input_text):
