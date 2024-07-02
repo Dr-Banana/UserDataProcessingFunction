@@ -52,7 +52,7 @@ def handle_predict(input_text, user_id):
         eventID = str(uuid.uuid4())
         processed_content = predict(input_text)
         dynamodb_handler.save_eventID(eventID, user_id)
-        save_result_to_s3(user_id, processed_content)
+        save_result_to_s3(user_id, eventID, processed_content)
         save_result_to_dynamodb(user_id, processed_content)
         return generate_response(200, {'content': processed_content})
     except RuntimeError as e:
@@ -72,8 +72,8 @@ def predict(input_text):
         logger.error(f"Error during prediction: {str(e)}")
         raise RuntimeError(f"Prediction failed: {str(e)}")
 
-def save_result_to_s3(user_id, processed_content):
-    s3_key = f"{user_id}/result.json"
+def save_result_to_s3(user_id, eventID, processed_content):
+    s3_key = f"{user_id}/{eventID}.json"
     try:
         save_to_s3(OUTPUT_BUCKET_NAME, s3_key, json.dumps(processed_content))
         logger.info('Saved cleaned result to S3: %s/%s', OUTPUT_BUCKET_NAME, s3_key)
