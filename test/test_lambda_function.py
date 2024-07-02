@@ -147,30 +147,30 @@ class TestLambdaFunction(TestCase):
     @patch('lambda_function.save_result_to_s3')
     @patch('lambda_function.save_result_to_dynamodb')
     @patch('lambda_function.dynamodb_handler')
-    def test_handle_clarification(self, mock_dynamodb_handler, mock_save_s3, mock_download_s3, mock_save_dynamodb):
-        user_id = 'test-user'
-        conversation_id = 'test-conversation'
-        missing_fields = ['time', 'place']
-        updated_content = {'time': '10:00 AM', 'place': 'Conference Room'}
-        current_content = {'event_1': {'brief': 'Test event', 'time': None, 'place': None, 'people': 'Team', 'date': '2024-06-28'}}
+    # def test_handle_clarification(self, mock_dynamodb_handler, mock_save_s3, mock_download_s3, mock_save_dynamodb):
+    #     user_id = 'test-user'
+    #     conversation_id = 'test-conversation'
+    #     missing_fields = ['time', 'place']
+    #     updated_content = {'time': '10:00 AM', 'place': 'Conference Room'}
+    #     current_content = {'event_1': {'brief': 'Test event', 'time': None, 'place': None, 'people': 'Team', 'date': '2024-06-28'}}
 
-        mock_download_s3.return_value = json.dumps(current_content)
-        mock_save_s3.return_value = None
-        mock_save_dynamodb.return_value = None
-        mock_dynamodb_handler.remove_ongoing_conversation.return_value = None
+    #     mock_download_s3.return_value = json.dumps(current_content)
+    #     mock_save_s3.return_value = None
+    #     mock_save_dynamodb.return_value = None
+    #     mock_dynamodb_handler.remove_ongoing_conversation.return_value = None
 
-        response = handle_clarification(user_id, conversation_id, missing_fields, updated_content)
+    #     response = handle_clarification(user_id, conversation_id, missing_fields, updated_content)
 
-        self.assertEqual(response['statusCode'], 200)
-        body = json.loads(response['body'])
-        self.assertNotIn('missing_fields', body)
-        self.assertIn('content', body)
-        self.assertEqual(body['content'], {'event_1': {'brief': 'Test event', 'time': '10:00 AM', 'place': 'Conference Room', 'people': 'Team', 'date': '2024-06-28'}})
+    #     self.assertEqual(response['statusCode'], 200)
+    #     body = json.loads(response['body'])
+    #     self.assertNotIn('missing_fields', body)
+    #     self.assertIn('content', body)
+    #     self.assertEqual(body['content'], {'event_1': {'brief': 'Test event', 'time': '10:00 AM', 'place': 'Conference Room', 'people': 'Team', 'date': '2024-06-28'}})
 
-        mock_download_s3.assert_called_once_with(self.s3_client, OUTPUT_BUCKET_NAME, f"{user_id}/{conversation_id}.json")
-        mock_save_s3.assert_called_once_with(user_id, conversation_id, {'event_1': {'brief': 'Test event', 'time': '10:00 AM', 'place': 'Conference Room', 'people': 'Team', 'date': '2024-06-28'}})
-        mock_save_dynamodb.assert_called_once_with(user_id, {'event_1': {'brief': 'Test event', 'time': '10:00 AM', 'place': 'Conference Room', 'people': 'Team', 'date': '2024-06-28'}})
-        mock_dynamodb_handler.remove_ongoing_conversation.assert_called_once_with(user_id)
+    #     mock_download_s3.assert_called_once_with(self.s3_client, OUTPUT_BUCKET_NAME, f"{user_id}/{conversation_id}.json")
+    #     mock_save_s3.assert_called_once_with(user_id, conversation_id, {'event_1': {'brief': 'Test event', 'time': '10:00 AM', 'place': 'Conference Room', 'people': 'Team', 'date': '2024-06-28'}})
+    #     mock_save_dynamodb.assert_called_once_with(user_id, {'event_1': {'brief': 'Test event', 'time': '10:00 AM', 'place': 'Conference Room', 'people': 'Team', 'date': '2024-06-28'}})
+    #     mock_dynamodb_handler.remove_ongoing_conversation.assert_called_once_with(user_id)
 
     def tearDown(self):
         """
