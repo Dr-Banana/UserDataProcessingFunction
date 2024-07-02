@@ -1,12 +1,14 @@
 import boto3
+import json
 from botocore.exceptions import NoCredentialsError
 
 s3_client = boto3.client('s3')
 
 def download_json_from_s3(bucket_name, key):
     try:
-        response = s3_client.Object(bucket_name, key)
-        json_data = response.get()['Body'].read().decode('utf-8')
+        response = s3_client.get_object(Bucket=bucket_name, Bucket=key)
+        print(response)
+        json_data = json.loads(response['Body'].read())
         return json_data
     except Exception as e:
         print(f"Error downloading file from S3: {e}")
