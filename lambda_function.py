@@ -98,10 +98,10 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
             return generate_response(404, {'error': 'Event not found'})
 
         # 更新当前结果
-        for field, value in updated_content.items():
-            for event in current_content.values():
-                if event[field] is None:
-                    event[field] = value
+        for event in current_content.values():
+            for field in missing_fields:
+                if field in updated_content:
+                    event[field] = updated_content[field]
 
         # 将更新后的结果保存回 S3
         save_result_to_s3(user_id, eventID, current_content)
