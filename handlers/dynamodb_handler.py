@@ -22,7 +22,7 @@ class DynamoDBHandler:
         except Exception as e:
             raise RuntimeError(f"Error saving to DynamoDB: {str(e)}")
 
-    def save_save_eventID(self, conversation_id, user_id):
+    def save_eventID(self, conversation_id, user_id):
         try:
             self.conver_table.put_item(
                 Item={
