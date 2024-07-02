@@ -5,7 +5,7 @@ s3_client = boto3.client('s3')
 
 def download_json_from_s3(bucket_name, key):
     try:
-        response = s3_client.get_object(Bucket=bucket_name, Bucket=key)
+        response = s3_client.get_object(Bucket=bucket_name, Key=key)
         json_data = response.get()['Body'].read().decode('utf-8')
         return json_data
     except Exception as e:
