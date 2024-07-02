@@ -27,8 +27,8 @@ def lambda_handler(event, context):
         elif action == 'clarify':
             user_id = body.get('UserID', '')
             eventID = body.get('EventID', '')
-            missing_fields = body.get('missing_fields', [])
-            updated_content = body.get('updated_content', {})
+            missing_fields = body.get('Missing_fields', [])
+            updated_content = body.get('Updated_content', {})
             return handle_clarification(user_id, eventID, missing_fields, updated_content)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
@@ -93,12 +93,23 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
     try:
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{eventID}.json"
-        generate_response(200, s3_key)
-        current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
-        if current_content is None:
+        current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
+        if not current_content:
             return generate_response(404, {'error': 'Event not found'})
-        generate_response(200, {'content': current_content})
 
+        # 更新当前结果
+        for field, value in updated_content.items():
+            for event in current_content.values():
+                if event[field] is None:
+                    event[field] = value
+
+        # 将更新后的结果保存回 S3
+        save_result_to_s3(user_id, eventID, current_content)
+
+        # 将更新后的结果保存到 DynamoDB
+        save_result_to_dynamodb(user_id, current_content)
+
+        return generate_response(200, {'content': current_content})
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
         return generate_response(500, {'error': str(e)})
