@@ -7,7 +7,7 @@ s3_client = boto3.client('s3')
 def download_json_from_s3(bucket_name, key):
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=key)
-        print(response)
+        generate_response(200, response)
         json_data = json.loads(response['Body'].read())
         return json_data
     except Exception as e:
@@ -21,3 +21,9 @@ def save_to_s3(bucket_name, key, data):
     except Exception as e:
         print(f"Error saving data to S3: {e}")
         return False
+
+def generate_response(status_code, body):
+    return {
+        'statusCode': status_code,
+        'body': json.dumps(body)
+    }
