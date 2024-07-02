@@ -6,7 +6,7 @@ s3_client = boto3.client('s3')
 
 def download_json_from_s3(bucket_name, key):
     try:
-        response = s3_client.get_object(Bucket=bucket_name, Bucket=key)
+        response = s3_client.get_object(Bucket=bucket_name, Key=key)
         print(response)
         json_data = json.loads(response['Body'].read())
         return json_data
