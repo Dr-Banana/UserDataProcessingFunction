@@ -1,22 +1,16 @@
 import boto3
-import json
-from utils.logger import setup_logger
 from botocore.exceptions import NoCredentialsError
 
-logger = setup_logger()
 s3_client = boto3.client('s3')
 
 def download_json_from_s3(bucket_name, key):
     try:
-        response = s3_client.get_object(Bucket=bucket_name, Key=key)
-        json_data = json.loads(response['Body'].read())
+        response = s3_client.get_object(Bucket=bucket_name, Bucket=key)
+        json_data = response.get()['Body'].read().decode('utf-8')
         return json_data
-    except s3_client.exceptions.NoSuchKey:
-        logger.error(f"File not found in S3: {key}")
-        return {}
     except Exception as e:
-        logger.error(f"Error downloading file from S3: {e}")
-        return {}
+        print(f"Error downloading file from S3: {e}")
+        return None
 
 def save_to_s3(bucket_name, key, data):
     try:
