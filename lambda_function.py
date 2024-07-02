@@ -95,31 +95,6 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
         s3_key = f"{user_id}/{eventID}.json"
         current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
 
-        # 更新当前结果
-        for field, value in updated_content.items():
-            for event in current_content.values():
-                if event[field] is None:
-                    event[field] = value
-
-        # 将更新后的结果保存回 S3
-        save_result_to_s3(user_id, eventID, current_content)
-
-        # 将更新后的结果保存到 DynamoDB
-        save_result_to_dynamodb(user_id, current_content)
-
-        # 检查是否还有缺失的信息
-        missing_fields = []
-        for event in current_content.values():
-            for field in ['brief', 'time', 'place', 'people', 'date']:
-                if event[field] is None:
-                    missing_fields.append(field)
-
-        if missing_fields:
-            return generate_response(200, {'missing_fields': missing_fields, 'current_content': current_content})
-        else:
-            # 从 DynamoDB 表中删除当前用户的未完成对话 ID
-            dynamodb_handler.remove_ongoing_conversation(user_id)
-            return generate_response(200, {'content': current_content})
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
         return generate_response(500, {'error': str(e)})
