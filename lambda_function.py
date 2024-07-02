@@ -94,6 +94,8 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{eventID}.json"
         current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
+        if current_content is None:
+            return generate_response(404, {'error': 'Event not found'})
         generate_response(200, {'content': current_content})
 
     except Exception as e:
