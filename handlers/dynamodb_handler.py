@@ -26,7 +26,7 @@ class DynamoDBHandler:
         try:
             self.conver_table.put_item(
                 Item={
-                    'ConversationID': conversation_id,
+                    'EventID': conversation_id,
                     'UserID': user_id
                 }
             )

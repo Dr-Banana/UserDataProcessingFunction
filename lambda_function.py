@@ -3,7 +3,7 @@ import uuid
 from config.config import ENDPOINT_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
 from config.templates import get_input_data_json
 from utils.logger import setup_logger
-from handlers.s3_handler import save_to_s3
+from handlers.s3_handler import save_to_s3, download_json_from_s3
 from handlers.sagemaker_handler import SageMakerHandler
 from handlers.dynamodb_handler import DynamoDBHandler
 from utils.json_processor import process_json
@@ -24,6 +24,12 @@ def lambda_handler(event, context):
             if not input_text or not user_id:
                 return generate_response(400, {'error': f'Invalid input: input_text={input_text}, UserID={user_id}'})
             return handle_predict(input_text, user_id)
+        elif action == 'clarify':
+            user_id = body.get('UserID', '')
+            eventID = body.get('EventID', '')
+            missing_fields = body.get('missing_fields', [])
+            updated_content = body.get('updated_content', {})
+            return handle_clarification(user_id, eventID, missing_fields, updated_content)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
         else:
@@ -43,9 +49,9 @@ def generate_response(status_code, body):
 
 def handle_predict(input_text, user_id):
     try:
-        conversation_id = str(uuid.uuid4())
+        eventID = str(uuid.uuid4())
         processed_content = predict(input_text)
-        dynamodb_handler.save_conversation_id(conversation_id, user_id)
+        dynamodb_handler.save_eventID(eventID, user_id)
         save_result_to_s3(user_id, processed_content)
         save_result_to_dynamodb(user_id, processed_content)
         return generate_response(200, {'content': processed_content})
@@ -82,3 +88,38 @@ def save_result_to_dynamodb(user_id, processed_content):
     except Exception as e:
         logger.error(f"Error saving to DynamoDB: {str(e)}")
         raise RuntimeError(f"Saving to DynamoDB failed: {str(e)}")
+    
+def handle_clarification(user_id, eventID, missing_fields, updated_content):
+    try:
+        # 从 S3 下载当前对话的结果
+        s3_key = f"{user_id}/{eventID}.json"
+        current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
+
+        # 更新当前结果
+        for field, value in updated_content.items():
+            for event in current_content.values():
+                if event[field] is None:
+                    event[field] = value
+
+        # 将更新后的结果保存回 S3
+        save_result_to_s3(user_id, eventID, current_content)
+
+        # 将更新后的结果保存到 DynamoDB
+        save_result_to_dynamodb(user_id, current_content)
+
+        # 检查是否还有缺失的信息
+        missing_fields = []
+        for event in current_content.values():
+            for field in ['brief', 'time', 'place', 'people', 'date']:
+                if event[field] is None:
+                    missing_fields.append(field)
+
+        if missing_fields:
+            return generate_response(200, {'missing_fields': missing_fields, 'current_content': current_content})
+        else:
+            # 从 DynamoDB 表中删除当前用户的未完成对话 ID
+            dynamodb_handler.remove_ongoing_conversation(user_id)
+            return generate_response(200, {'content': current_content})
+    except Exception as e:
+        logger.error(f"Error during clarification: {str(e)}")
+        return generate_response(500, {'error': str(e)})
