@@ -8,26 +8,15 @@ s3_client = boto3.client('s3')
 
 def download_json_from_s3(bucket_name, key):
     try:
-        logger.info(f"Downloading file from S3 bucket: {bucket_name}, key: {key}")
         response = s3_client.get_object(Bucket=bucket_name, Key=key)
-        logger.debug(f"S3 response: {response}")
         json_data = json.loads(response['Body'].read())
-        logger.info(f"Successfully downloaded file from S3: {key}")
         return json_data
-    except boto3.exceptions.ClientError as e:
-        error_code = e.response['Error']['Code']
-        if error_code == 'NoSuchKey':
-            logger.warning(f"File not found in S3: {key}")
-            return None
-        else:
-            logger.error(f"Error downloading file from S3: {e}")
-            raise RuntimeError(f"Error downloading file from S3: {e}")
-    except json.JSONDecodeError as e:
-        logger.error(f"Error decoding JSON data from S3: {e}")
-        raise RuntimeError(f"Error decoding JSON data from S3: {e}")
+    except s3_client.exceptions.NoSuchKey:
+        logger.error(f"File not found in S3: {key}")
+        return {}
     except Exception as e:
-        logger.error(f"Unexpected error downloading file from S3: {e}")
-        return None
+        logger.error(f"Error downloading file from S3: {e}")
+        return {}
 
 def save_to_s3(bucket_name, key, data):
     try:
