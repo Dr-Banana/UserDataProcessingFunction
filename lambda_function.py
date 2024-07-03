@@ -109,7 +109,7 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
         # 将更新后的结果保存到 DynamoDB
         save_result_to_dynamodb(user_id, current_content)
 
-        return generate_response(200, {'content': current_content})
+        return generate_response(200, current_content)
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
         return generate_response(500, {'error': str(e)})
