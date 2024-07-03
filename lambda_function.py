@@ -27,9 +27,8 @@ def lambda_handler(event, context):
         elif action == 'clarify':
             user_id = body.get('UserID', '')
             eventID = body.get('EventID', '')
-            missing_fields = body.get('Missing_fields', [])
             updated_content = body.get('Updated_content', {})
-            return handle_clarification(user_id, eventID, missing_fields, updated_content)
+            return handle_clarification(user_id, eventID, updated_content)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
         else:
@@ -89,7 +88,7 @@ def save_result_to_dynamodb(user_id, processed_content):
         logger.error(f"Error saving to DynamoDB: {str(e)}")
         raise RuntimeError(f"Saving to DynamoDB failed: {str(e)}")
     
-def handle_clarification(user_id, eventID, missing_fields, updated_content):
+def handle_clarification(user_id, eventID, updated_content):
     try:
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{eventID}.json"
