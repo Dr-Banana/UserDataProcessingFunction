@@ -11,10 +11,10 @@ def download_json_from_s3(bucket_name, key):
         return json_data
     except s3_client.exceptions.NoSuchKey:
         print(f"File not found in S3: {key}")
-        return {}
+        return None
     except Exception as e:
         print(f"Error downloading file from S3: {e}")
-        return {}
+        return None
 
 def save_to_s3(bucket_name, key, data):
     try:

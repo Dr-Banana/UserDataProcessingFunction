@@ -94,14 +94,13 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{eventID}.json"
         current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
-        if not current_content:
+        if current_content is None:
             return generate_response(404, {'error': 'Event not found'})
 
         # 更新当前结果
-        for event in current_content.values():
-            for field in missing_fields:
-                if field in updated_content:
-                    event[field] = updated_content[field]
+        for field in missing_fields:
+            if field in updated_content:
+                current_content[field] = updated_content[field]
 
         # 将更新后的结果保存回 S3
         save_result_to_s3(user_id, eventID, json.dumps(current_content))
