@@ -27,9 +27,8 @@ def lambda_handler(event, context):
         elif action == 'clarify':
             user_id = body.get('UserID', '')
             eventID = body.get('EventID', '')
-            missing_fields = body.get('Missing_fields', [])
             updated_content = body.get('Updated_content', {})
-            return handle_clarification(user_id, eventID, missing_fields, updated_content)
+            return handle_clarification(user_id, eventID, updated_content)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
         else:
@@ -89,7 +88,7 @@ def save_result_to_dynamodb(user_id, processed_content):
         logger.error(f"Error saving to DynamoDB: {str(e)}")
         raise RuntimeError(f"Saving to DynamoDB failed: {str(e)}")
     
-def handle_clarification(user_id, eventID, missing_fields, updated_content):
+def handle_clarification(user_id, eventID, updated_content):
     try:
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{eventID}.json"
@@ -98,9 +97,9 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
             return generate_response(404, {'error': 'Event not found'})
 
         # 更新当前结果
-        for field in missing_fields:
-            if field in updated_content:
-                current_content[field] = updated_content[field]
+        for field, value in updated_content.items():
+            if field in current_content:
+                current_content[field] = value
 
         # 将更新后的结果保存回 S3
         save_result_to_s3(user_id, eventID, json.dumps(current_content))
@@ -112,3 +111,17 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
         return generate_response(500, {'error': str(e)})
+    
+def check_missing(user_id, eventID):
+    s3_key = f"{user_id}/{eventID}.json"
+    current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
+    if not current_content:
+        return []
+
+    missing_fields = []
+    for field, value in current_content.items():
+        if value is None:
+            missing_fields.append(field)
+
+    return missing_fields
+        
