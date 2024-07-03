@@ -7,7 +7,7 @@ s3_client = boto3.client('s3')
 def download_json_from_s3(bucket_name, key):
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=key)
-        json_data = json.load(response['Body'])
+        json_data = json.loads(response['Body'].read().decode('utf-8'))
         return json_data
     except s3_client.exceptions.NoSuchKey:
         print(f"File not found in S3: {key}")

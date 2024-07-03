@@ -104,7 +104,7 @@ def handle_clarification(user_id, eventID, missing_fields, updated_content):
                     event[field] = updated_content[field]
 
         # 将更新后的结果保存回 S3
-        save_result_to_s3(user_id, eventID, current_content)
+        save_result_to_s3(user_id, eventID, json.dumps(current_content))
 
         # 将更新后的结果保存到 DynamoDB
         save_result_to_dynamodb(user_id, current_content)
