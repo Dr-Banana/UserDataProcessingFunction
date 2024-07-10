@@ -50,9 +50,8 @@ def handle_predict(input_text, user_id):
     try:
         eventID = str(uuid.uuid4())
         processed_content = predict(input_text)
-        dynamodb_handler.save_eventID(eventID, user_id)
         save_result_to_s3(user_id, eventID, processed_content)
-        save_result_to_dynamodb(user_id, processed_content)
+        save_result_to_dynamodb(user_id, eventID, processed_content)
         return generate_response(200, {'content': processed_content})
     except RuntimeError as e:
         logger.error(str(e))
@@ -80,9 +79,9 @@ def save_result_to_s3(user_id, eventID, processed_content):
         logger.error(f"Error saving to S3: {str(e)}")
         raise RuntimeError(f"Saving to S3 failed: {str(e)}")
 
-def save_result_to_dynamodb(user_id, processed_content):
+def save_result_to_dynamodb(user_id, eventID, processed_content):
     try:
-        dynamodb_handler.update_item(user_id, processed_content)
+        dynamodb_handler.update_item(user_id, eventID, processed_content)
         logger.info('Saved result to DynamoDB for UserID: %s', user_id)
     except Exception as e:
         logger.error(f"Error saving to DynamoDB: {str(e)}")

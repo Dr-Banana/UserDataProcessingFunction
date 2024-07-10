@@ -30,12 +30,6 @@ class TestLambdaFunction(TestCase):
 
         # 创建模拟的 DynamoDB 表
         self.dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
-        self.table = self.dynamodb.create_table(
-            TableName=TODO_TABLE_NAME,
-            KeySchema=[{'AttributeName': 'UserID', 'KeyType': 'HASH'}],
-            AttributeDefinitions=[{'AttributeName': 'UserID', 'AttributeType': 'S'}],
-            BillingMode='PAY_PER_REQUEST'
-        )
         self.conversation_table = self.dynamodb.create_table(
             TableName=CONVERSATION_TABLE_NAME,
             KeySchema=[{'AttributeName': 'EventID', 'KeyType': 'HASH'}],
@@ -108,14 +102,23 @@ class TestLambdaFunction(TestCase):
         Test saving results to DynamoDB
         """
         user_id = 'test-user'
+        event_id = "test-event-id"
         content = {'event_1': {'brief': 'Test event', 'time': '10:00', 'place': 'Office', 'people': 'Team', 'date': '2024-06-28'}}
         
-        save_result_to_dynamodb(user_id, content)
+        save_result_to_dynamodb(user_id, event_id, content)
+
+        response = self.conversation_table.get_item(
+            Key={
+                'UserID': user_id,
+                'ConversationID': event_id
+            }
+        )
         
-        # 验证数据是否被保存到 DynamoDB
-        item = self.table.get_item(Key={'UserID': user_id})['Item']
-        
-        self.assertEqual(item['TodoList'], content, "Content saved to DynamoDB does not match the original content")
+        if 'Item' in response:
+            saved_content = response['Item']['Content']
+            self.assertEqual(saved_content, content, "Content saved to DynamoDB does not match the original content")
+        else:
+            self.fail("Expected data not found in DynamoDB")
 
     @patch('lambda_function.predict')
     @patch('lambda_function.save_result_to_s3')
@@ -154,7 +157,7 @@ class TestLambdaFunction(TestCase):
         bucket.delete()
 
         # 清理 DynamoDB 表
-        self.table.delete()
+        self.conversation_table.delete()
 
 if __name__ == '__main__':
     unittest.main()

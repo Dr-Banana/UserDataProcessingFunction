@@ -6,18 +6,25 @@ class DynamoDBHandler:
     def __init__(self):
         self.dynamodb = boto3.resource('dynamodb')
 
-        self.todo_table_name = TODO_TABLE_NAME
-        self.todo_table = self.dynamodb.Table(TODO_TABLE_NAME)
-
         self.conver_table_name = CONVERSATION_TABLE_NAME
         self.conver_table = self.dynamodb.Table(CONVERSATION_TABLE_NAME)
 
-    def update_item(self, user_id, content):
+    def update_item(self, user_id, eventID, content):
         try:
-            self.todo_table.update_item(
-                Key={'UserID': user_id},
-                UpdateExpression="SET TodoList = :t",
-                ExpressionAttributeValues={':t': content}
+            self.conver_table.put_item(
+                Item={
+                    'UserID': user_id,
+                    'ConversationID': eventID,
+                    'Content': content
+                }
+            )
+            self.conver_table.update_item(
+                Key={
+                    'UserID': user_id,
+                    'ConversationID': eventID
+                },
+                UpdateExpression="SET Content = :c",
+                ExpressionAttributeValues={':c': content}
             )
         except Exception as e:
             raise RuntimeError(f"Error saving to DynamoDB: {str(e)}")
