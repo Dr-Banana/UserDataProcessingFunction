@@ -28,15 +28,3 @@ class DynamoDBHandler:
             )
         except Exception as e:
             raise RuntimeError(f"Error saving to DynamoDB: {str(e)}")
-
-    def save_eventID(self, conversation_id, user_id):
-        try:
-            self.conver_table.put_item(
-                Item={
-                    'EventID': conversation_id,
-                    'UserID': user_id
-                }
-            )
-            return True
-        except Exception as e:
-            raise RuntimeError(f"Error saving conversation to DynamoDB: {str(e)}")

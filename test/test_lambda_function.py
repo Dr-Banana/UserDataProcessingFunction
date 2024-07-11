@@ -102,15 +102,15 @@ class TestLambdaFunction(TestCase):
         Test saving results to DynamoDB
         """
         user_id = 'test-user'
-        event_id = "test-event-id"
+        conversation_id = "test-conversation-id"
         content = {'event_1': {'brief': 'Test event', 'time': '10:00', 'place': 'Office', 'people': 'Team', 'date': '2024-06-28'}}
         
-        save_result_to_dynamodb(user_id, event_id, content)
+        save_result_to_dynamodb(user_id, conversation_id, content)
 
         response = self.conversation_table.get_item(
             Key={
                 'UserID': user_id,
-                'ConversationID': event_id
+                'ConversationID': conversation_id
             }
         )
         

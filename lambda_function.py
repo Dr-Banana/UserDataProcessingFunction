@@ -104,7 +104,7 @@ def handle_clarification(user_id, eventID, updated_content):
         save_result_to_s3(user_id, eventID, json.dumps(current_content))
 
         # 将更新后的结果保存到 DynamoDB
-        save_result_to_dynamodb(user_id, current_content)
+        save_result_to_dynamodb(user_id, eventID, current_content)
 
         return generate_response(200, current_content)
     except Exception as e:
