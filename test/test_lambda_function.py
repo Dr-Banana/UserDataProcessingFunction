@@ -119,7 +119,7 @@ class TestLambdaFunction(TestCase):
             self.assertEqual(saved_content, content, "Content saved to DynamoDB does not match the original content")
         else:
             self.fail("Expected data not found in DynamoDB")
-
+            
     @patch('lambda_function.predict')
     @patch('lambda_function.save_result_to_s3')
     @patch('lambda_function.save_result_to_dynamodb')
