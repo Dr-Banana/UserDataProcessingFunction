@@ -32,8 +32,8 @@ class TestLambdaFunction(TestCase):
         self.dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
         self.conversation_table = self.dynamodb.create_table(
             TableName=CONVERSATION_TABLE_NAME,
-            KeySchema=[{'AttributeName': 'EventID', 'KeyType': 'HASH'}],
-            AttributeDefinitions=[{'AttributeName': 'EventID', 'AttributeType': 'S'}],
+            KeySchema=[{'AttributeName': 'UserID', 'KeyType': 'HASH'}, {'AttributeName': 'ConversationID', 'KeyType': 'RANGE'}],
+            AttributeDefinitions=[{'AttributeName': 'UserID', 'AttributeType': 'S'}, {'AttributeName': 'ConversationID', 'AttributeType': 'S'}],
             BillingMode='PAY_PER_REQUEST'
         )
 
