@@ -1,4 +1,5 @@
 import json
+import base64
 import uuid
 from config.config import ENDPOINT_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
 from config.templates import get_input_data_json
@@ -38,7 +39,8 @@ def lambda_handler(event, context):
         return generate_response(500, {'error': 'Error processing request', 'details': str(e)})
 
 def parse_event(event):
-    return json.loads(event.get('body', '{}'))
+    body = base64.b64decode(event['body']).decode('utf-8')
+    return json.loads(body)
 
 def generate_response(status_code, body):
     return {
