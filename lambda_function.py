@@ -66,6 +66,7 @@ def predict(input_text, action):
     input_data_json = get_input_data_json(preset_prompt, input_text, PARAMETERS)
     try:
         result = sagemaker_handler.predict(input_data_json)
+        logger.info('Result from prediction: %s', result)
     except Exception as e:
         logger.error(f"Error during prediction: {str(e)}")
         return generate_response(100, {'error': "prediction error in sagemaker_handler.predict(input_data_json)"})
@@ -84,18 +85,18 @@ def handle_predict(user_id, event_id, input_text):
         return generate_response(101, {'error': str(e)})
     
 def handle_clarification(user_id, event_id, input_text):
-    # s3_key = f"{user_id}/{event_id}.json"
-    # current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
-    # # current_content = json.dumps(current_content)
+    s3_key = f"{user_id}/{event_id}.json"
+    current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
+    current_content = json.dumps(current_content)
     # current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
 
     # # 构建组合文本
-    # combine_text = json.dumps({
-    #     "user": input_text,
-    #     "json": current_content
-    # })
-    # logger.info('event: %s',combine_text)
-    combine_text = input_text
+    combine_text = json.dumps({
+        "user": input_text,
+        "json": current_content
+    })
+    logger.info('event: %s',combine_text)
+    # combine_text = input_text
     try:
         # 从 S3 下载当前对话的结果
         logger.info('update text: %s', combine_text)
