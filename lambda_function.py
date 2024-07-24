@@ -66,11 +66,11 @@ def predict(input_text, action):
     input_data_json = get_input_data_json(preset_prompt, input_text, PARAMETERS)
     try:
         result = sagemaker_handler.predict(input_data_json)
-        processed_content = process_json(result)
-        return processed_content
     except Exception as e:
         logger.error(f"Error during prediction: {str(e)}")
-        raise RuntimeError(f"Prediction failed: {str(e)}")
+        return generate_response(100, {'error': "prediction error in sagemaker_handler.predict(input_data_json)"})
+    processed_content = process_json(result)
+    return processed_content
 
 def handle_predict(user_id, event_id, input_text):
     try:
@@ -81,7 +81,7 @@ def handle_predict(user_id, event_id, input_text):
         return generate_response(200, {'content': processed_content})
     except RuntimeError as e:
         logger.error(str(e))
-        return generate_response(500, {'error': str(e)})
+        return generate_response(101, {'error': str(e)})
     
 def handle_clarification(user_id, event_id, input_text):
     # s3_key = f"{user_id}/{event_id}.json"
@@ -104,7 +104,7 @@ def handle_clarification(user_id, event_id, input_text):
         return generate_response(200, {'content': processed_content})
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
-        return generate_response(400, {'error': str(e)})
+        return generate_response(102, {'error': str(e)})
 
 def save_result_to_dynamodb(user_id, eventID, processed_content):
     try:
