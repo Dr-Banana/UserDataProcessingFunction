@@ -53,7 +53,7 @@ def handle_predict(input_text, user_id):
         eventID = str(uuid.uuid4())
         processed_content = predict(input_text)
         save_result_to_s3(user_id, eventID, processed_content)
-        save_result_to_dynamodb(user_id, eventID, processed_content)
+        # save_result_to_dynamodb(user_id, eventID, processed_content)
         return generate_response(200, {'content': processed_content})
     except RuntimeError as e:
         logger.error(str(e))
@@ -106,7 +106,7 @@ def handle_clarification(user_id, eventID, updated_content):
         save_result_to_s3(user_id, eventID, json.dumps(current_content))
 
         # 将更新后的结果保存到 DynamoDB
-        save_result_to_dynamodb(user_id, eventID, current_content)
+        # save_result_to_dynamodb(user_id, eventID, current_content)
 
         return generate_response(200, current_content)
     except Exception as e:
