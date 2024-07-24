@@ -28,7 +28,7 @@ def lambda_handler(event, context):
         elif action == 'update':
             user_id = body.get('UserID', '')
             event_id = body.get('EventID', '')
-            input_text = body.get('Input_text', {})
+            input_text = body.get('Input_text', '')
             return handle_clarification(user_id, event_id, input_text)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
@@ -74,6 +74,7 @@ def predict(input_text, action):
 
 def handle_predict(user_id, event_id, input_text):
     try:
+        logger.info('predict text: %s', input_text)
         processed_content = predict(input_text, "predict")
         save_result_to_s3(user_id, event_id, processed_content)
         # save_result_to_dynamodb(user_id, event_id, processed_content)
@@ -83,25 +84,24 @@ def handle_predict(user_id, event_id, input_text):
         return generate_response(500, {'error': str(e)})
     
 def handle_clarification(user_id, event_id, input_text):
-    s3_key = f"{user_id}/{event_id}.json"
-    current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
-    # current_content = json.dumps(current_content)
-    current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
+    # s3_key = f"{user_id}/{event_id}.json"
+    # current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
+    # # current_content = json.dumps(current_content)
+    # current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
 
-    # 构建组合文本
-    combine_text = json.dumps({
-        "user": input_text,
-        "json": current_content
-    })
-    logger.info('event: %s',combine_text)
+    # # 构建组合文本
+    # combine_text = json.dumps({
+    #     "user": input_text,
+    #     "json": current_content
+    # })
+    # logger.info('event: %s',combine_text)
     combine_text = """{user: "For today's dinner I probably will just have the KFC", json: {"brief": "Tonight dinner", "time": "None", "place": "None", "people": "Me", "date": "today"}}"""
     try:
         # 从 S3 下载当前对话的结果
+        logger.info('update text: %s', combine_text)
         processed_content = predict(combine_text, "update")
-        logger.info('output text %s', processed_content)
-        print('output text', processed_content)
         save_result_to_s3(user_id, event_id, processed_content)
-        return generate_response(200, current_content)
+        return generate_response(200, {'content': processed_content})
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
         return generate_response(400, {'error': str(e)})
