@@ -87,6 +87,10 @@ def handle_clarification(user_id, event_id, input_text):
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{event_id}.json"
         current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
+        logger.info(current_content, type(current_content).__name__)
+        print(current_content, type(current_content).__name__)
+        logger.info(input_text, type(input_text).__name__)
+        print(input_text, type(input_text).__name__)
         if current_content is None:
             return generate_response(404, {'error': 'Event not found'})
 
@@ -103,7 +107,7 @@ def handle_clarification(user_id, event_id, input_text):
 
         # 构建组合文本
         combine_text = f'{{user: {json.dumps(input_text)}, json: {current_content}}}'
-        
+
         logger.info('input combine_text: %s', combine_text)
         print(('input combine_text:', combine_text))
         processed_content = predict(combine_text, "update")
