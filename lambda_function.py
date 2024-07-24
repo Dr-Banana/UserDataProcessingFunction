@@ -83,16 +83,16 @@ def handle_predict(user_id, event_id, input_text):
         return generate_response(500, {'error': str(e)})
     
 def handle_clarification(user_id, event_id, input_text):
+    s3_key = f"{user_id}/{event_id}.json"
+    current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
+    # current_content = json.dumps(current_content)
+    current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
+
+    # 构建组合文本
+    combine_text = f'{{user: {input_text}, json: {current_content}}}'
+    logger.info('event: %s',type(combine_text))
     try:
         # 从 S3 下载当前对话的结果
-        s3_key = f"{user_id}/{event_id}.json"
-        current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
-        # current_content = json.dumps(current_content)
-        current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
-
-        # 构建组合文本
-        combine_text = f'{{user: {input_text}, json: {current_content}}}'
-        logger.info('event: %s',type(combine_text))
         processed_content = predict(combine_text, "update")
         logger.info('output text %s', processed_content)
         print('output text', processed_content)
