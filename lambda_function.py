@@ -36,7 +36,7 @@ def lambda_handler(event, context):
             return generate_response(400, {'error': f'Invalid action: {action}'})
     except Exception as e:
         logger.error('Error processing request: %s', str(e))
-        return generate_response(500, {'error': 'Error processing request', 'details': str(e)})
+        return generate_response(505, {'error': 'Error processing request', 'details': str(e)})
 
 def parse_event(event):
     body = base64.b64decode(event['body']).decode('utf-8')
@@ -87,14 +87,12 @@ def handle_clarification(user_id, event_id, input_text):
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{event_id}.json"
         current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
-        current_content = json.dumps(current_content)
+        # current_content = json.dumps(current_content)
+        current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
         print(type(current_content))
 
         # 构建组合文本
         combine_text = f'{{user: {input_text}, json: {current_content}}}'
-
-        logger.info('input combine_text: %s', combine_text)
-        print(('input combine_text:', combine_text))
         processed_content = predict(combine_text, "update")
         logger.info('output text %s', processed_content)
         print('output text', processed_content)
@@ -102,7 +100,7 @@ def handle_clarification(user_id, event_id, input_text):
         return generate_response(200, current_content)
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
-        return generate_response(500, {'error': str(e)})
+        return generate_response(400, {'error': str(e)})
 
 def save_result_to_dynamodb(user_id, eventID, processed_content):
     try:
