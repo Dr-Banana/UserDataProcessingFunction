@@ -95,7 +95,7 @@ def handle_clarification(user_id, event_id, input_text):
     #     "json": current_content
     # })
     # logger.info('event: %s',combine_text)
-    combine_text = """{"user": "For today's dinner I probably will just have the KFC", "json": {"brief": "Tonight dinner", "time": "None", "place": "None", "people": "Me", "date": "today"}}"""
+    combine_text = input_text
     try:
         # 从 S3 下载当前对话的结果
         logger.info('update text: %s', combine_text)
@@ -104,7 +104,7 @@ def handle_clarification(user_id, event_id, input_text):
         return generate_response(200, {'content': processed_content})
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
-        return generate_response(102, {'error': str(e)})
+        return generate_response(400, {'error': str(e)})
 
 def save_result_to_dynamodb(user_id, eventID, processed_content):
     try:
