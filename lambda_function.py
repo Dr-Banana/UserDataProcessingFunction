@@ -22,14 +22,14 @@ def lambda_handler(event, context):
 
         if action == 'predict':
             user_id = body.get('UserID', '')
-            eventID = body.get('EventID', '')
+            event_id = body.get('EventID', '')
             input_text = body.get('input_text', '')
-            return handle_predict(user_id, eventID, input_text)
+            return handle_predict(user_id, event_id, input_text)
         elif action == 'update':
             user_id = body.get('UserID', '')
-            eventID = body.get('EventID', '')
+            event_id = body.get('EventID', '')
             input_text = body.get('Updated_content', {})
-            return handle_clarification(user_id, eventID, input_text)
+            return handle_clarification(user_id, event_id, input_text)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
         else:
@@ -72,29 +72,30 @@ def predict(input_text, action):
         logger.error(f"Error during prediction: {str(e)}")
         raise RuntimeError(f"Prediction failed: {str(e)}")
 
-def handle_predict(user_id, eventID, input_text):
+def handle_predict(user_id, event_id, input_text):
     try:
-        eventID = user_id
         processed_content = predict(input_text, "predict")
-        save_result_to_s3(user_id, eventID, processed_content)
-        # save_result_to_dynamodb(user_id, eventID, processed_content)
+        save_result_to_s3(user_id, event_id, processed_content)
+        # save_result_to_dynamodb(user_id, event_id, processed_content)
         return generate_response(200, {'content': processed_content})
     except RuntimeError as e:
         logger.error(str(e))
         return generate_response(500, {'error': str(e)})
     
-def handle_clarification(user_id, eventID, input_text):
+def handle_clarification(user_id, event_id, input_text):
     try:
         # 从 S3 下载当前对话的结果
-        s3_key = f"{user_id}/{eventID}.json"
+        s3_key = f"{user_id}/{event_id}.json"
         current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
         if current_content is None:
             return generate_response(404, {'error': 'Event not found'})
 
         # send to llama to update json
         combine_text = f'{{user: "{input_text}", json: {json.dumps(current_content)}}}'
+        logger.info('input combine_text: %s', combine_text)
         processed_content = predict(combine_text, "update")
-        save_result_to_s3(user_id, eventID, processed_content)
+        logger.info('output text %s', processed_content)
+        save_result_to_s3(user_id, event_id, processed_content)
         return generate_response(200, current_content)
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
