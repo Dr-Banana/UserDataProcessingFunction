@@ -23,12 +23,12 @@ def lambda_handler(event, context):
         if action == 'predict':
             user_id = body.get('UserID', '')
             event_id = body.get('EventID', '')
-            input_text = body.get('input_text', '')
+            input_text = body.get('Input_text', '')
             return handle_predict(user_id, event_id, input_text)
         elif action == 'update':
             user_id = body.get('UserID', '')
             event_id = body.get('EventID', '')
-            input_text = body.get('Updated_content', {})
+            input_text = body.get('Input_text', {})
             return handle_clarification(user_id, event_id, input_text)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
@@ -87,26 +87,11 @@ def handle_clarification(user_id, event_id, input_text):
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{event_id}.json"
         current_content = json.loads(download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key))
-        logger.info(current_content, type(current_content).__name__)
-        print(current_content, type(current_content).__name__)
-        logger.info(input_text, type(input_text).__name__)
-        print(input_text, type(input_text).__name__)
-        if current_content is None:
-            return generate_response(404, {'error': 'Event not found'})
-
-        if isinstance(current_content, dict):
-            current_content = json.dumps(current_content)
-        elif not isinstance(current_content, str):
-            return generate_response(400, {'error': 'Unexpected content type'})
-
-        # 确保 input_text 是字符串
-        if isinstance(input_text, dict):
-            input_text = json.dumps(input_text)
-        elif not isinstance(input_text, str):
-            return generate_response(400, {'error': 'Invalid input_text type'})
+        current_content = json.dumps(current_content)
+        print(type(current_content))
 
         # 构建组合文本
-        combine_text = f'{{user: {json.dumps(input_text)}, json: {current_content}}}'
+        combine_text = f'{{user: {input_text}, json: {current_content}}}'
 
         logger.info('input combine_text: %s', combine_text)
         print(('input combine_text:', combine_text))
