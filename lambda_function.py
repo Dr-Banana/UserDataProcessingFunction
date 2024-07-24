@@ -1,10 +1,11 @@
 import json
 import base64
 import uuid
-from config.config import ENDPOINT_NAME, PRESET_PROMPT, PARAMETERS, OUTPUT_BUCKET_NAME
+from config.config import ENDPOINT_NAME, PARAMETERS, OUTPUT_BUCKET_NAME
+from config.prompt import *
 from config.templates import get_input_data_json
 from utils.logger import setup_logger
-from handlers.s3_handler import save_to_s3, download_json_from_s3
+from handlers.s3_handler import save_result_to_s3, download_json_from_s3
 from handlers.sagemaker_handler import SageMakerHandler
 from handlers.dynamodb_handler import DynamoDBHandler
 from utils.json_processor import process_json
@@ -23,8 +24,6 @@ def lambda_handler(event, context):
             user_id = body.get('UserID', '')
             eventID = body.get('EventID', '')
             input_text = body.get('input_text', '')
-            if not input_text or not user_id:
-                return generate_response(400, {'error': f'Invalid input: input_text={input_text}, UserID={user_id}'})
             return handle_predict(user_id, eventID, input_text)
         elif action == 'update':
             user_id = body.get('UserID', '')
@@ -49,13 +48,24 @@ def generate_response(status_code, body):
         'body': json.dumps(body)
     }
 
-def predict(input_text):
-    sagemaker_handler = SageMakerHandler(ENDPOINT_NAME)
-    input_data_json = get_input_data_json(PRESET_PROMPT, input_text, PARAMETERS)
+def predict(input_text, action):
+    try:
+        sagemaker_handler = SageMakerHandler(ENDPOINT_NAME)
+    except Exception as e:
+        logger.info("Endpoint connection error")
+        generate_response(503, {'error': 'Sagemaker Endpoint Connection Error'})
+        return None
     
+    preset_prompts = {
+        'predict': PRESET_PROMPT_1,
+        'update': PRESET_PROMPT_2
+    }
+
+    preset_prompt = preset_prompts.get(action, PRESET_PROMPT_1)
+    
+    input_data_json = get_input_data_json(preset_prompt, input_text, PARAMETERS)
     try:
         result = sagemaker_handler.predict(input_data_json)
-        logger.info('Raw SageMaker result: %s', result)
         processed_content = process_json(result)
         return processed_content
     except Exception as e:
@@ -65,7 +75,7 @@ def predict(input_text):
 def handle_predict(user_id, eventID, input_text):
     try:
         eventID = user_id
-        processed_content = predict(input_text)
+        processed_content = predict(input_text, "predict")
         save_result_to_s3(user_id, eventID, processed_content)
         # save_result_to_dynamodb(user_id, eventID, processed_content)
         return generate_response(200, {'content': processed_content})
@@ -73,7 +83,7 @@ def handle_predict(user_id, eventID, input_text):
         logger.error(str(e))
         return generate_response(500, {'error': str(e)})
     
-def handle_clarification(user_id, eventID, updated_content):
+def handle_clarification(user_id, eventID, input_text):
     try:
         # 从 S3 下载当前对话的结果
         s3_key = f"{user_id}/{eventID}.json"
@@ -81,30 +91,14 @@ def handle_clarification(user_id, eventID, updated_content):
         if current_content is None:
             return generate_response(404, {'error': 'Event not found'})
 
-        # 更新当前结果
-        for field, value in updated_content.items():
-            if field in updated_content:
-                current_content[field] = updated_content[field]
-
-        # 将更新后的结果保存回 S3
-        save_result_to_s3(user_id, eventID, json.dumps(current_content))
-
-        # 将更新后的结果保存到 DynamoDB
-        # save_result_to_dynamodb(user_id, eventID, current_content)
-
+        # send to llama to update json
+        combine_text = f'{{user: "{input_text}", json: {json.dumps(current_content)}}}'
+        processed_content = predict(combine_text, "update")
+        save_result_to_s3(user_id, eventID, processed_content)
         return generate_response(200, current_content)
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
         return generate_response(500, {'error': str(e)})
-
-def save_result_to_s3(user_id, eventID, processed_content):
-    s3_key = f"{user_id}/{eventID}.json"
-    try:
-        save_to_s3(OUTPUT_BUCKET_NAME, s3_key, json.dumps(processed_content))
-        logger.info('Saved cleaned result to S3: %s/%s', OUTPUT_BUCKET_NAME, s3_key)
-    except Exception as e:
-        logger.error(f"Error saving to S3: {str(e)}")
-        raise RuntimeError(f"Saving to S3 failed: {str(e)}")
 
 def save_result_to_dynamodb(user_id, eventID, processed_content):
     try:

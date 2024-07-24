@@ -1,6 +1,7 @@
 import boto3
 import json
 from botocore.exceptions import NoCredentialsError
+from config.config import OUTPUT_BUCKET_NAME
 
 s3_client = boto3.client('s3')
 
@@ -23,3 +24,10 @@ def save_to_s3(bucket_name, key, data):
     except Exception as e:
         print(f"Error saving data to S3: {e}")
         return False
+    
+def save_result_to_s3(user_id, eventID, processed_content):
+    s3_key = f"{user_id}/{eventID}.json"
+    try:
+        save_to_s3(OUTPUT_BUCKET_NAME, s3_key, json.dumps(processed_content))
+    except Exception as e:
+        raise RuntimeError(f"Saving to S3 failed: {str(e)}")
