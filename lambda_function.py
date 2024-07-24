@@ -93,8 +93,10 @@ def handle_clarification(user_id, event_id, input_text):
         # send to llama to update json
         combine_text = f'{{user: "{input_text}", json: {json.dumps(current_content)}}}'
         logger.info('input combine_text: %s', combine_text)
+        print(('input combine_text: %s', combine_text))
         processed_content = predict(combine_text, "update")
         logger.info('output text %s', processed_content)
+        print('output text %s', processed_content)
         save_result_to_s3(user_id, event_id, processed_content)
         return generate_response(200, current_content)
     except Exception as e:
