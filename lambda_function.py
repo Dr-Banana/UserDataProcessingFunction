@@ -94,6 +94,7 @@ def handle_clarification(user_id, event_id, input_text):
         "json": current_content
     })
     logger.info('event: %s',combine_text)
+    combine_text = """{user: "For today's dinner I probably will just have the KFC", json: {"brief": "Tonight dinner", "time": "None", "place": "None", "people": "Me", "date": "today"}}"""
     try:
         # 从 S3 下载当前对话的结果
         processed_content = predict(combine_text, "update")
