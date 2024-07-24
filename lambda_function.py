@@ -90,15 +90,20 @@ def handle_clarification(user_id, event_id, input_text):
         if current_content is None:
             return generate_response(404, {'error': 'Event not found'})
 
-        # send to llama to update json
+        if isinstance(current_content, dict):
+            current_content = json.dumps(current_content)
+        elif not isinstance(current_content, str):
+            return generate_response(400, {'error': 'Unexpected content type'})
+
+        # 确保 input_text 是字符串
         if isinstance(input_text, dict):
             input_text = json.dumps(input_text)
+        elif not isinstance(input_text, str):
+            return generate_response(400, {'error': 'Invalid input_text type'})
 
         # 构建组合文本
-        combine_text = json.dumps({
-            "user": input_text,
-            "json": current_content
-        })
+        combine_text = f'{{user: {json.dumps(input_text)}, json: {current_content}}}'
+        
         logger.info('input combine_text: %s', combine_text)
         print(('input combine_text:', combine_text))
         processed_content = predict(combine_text, "update")
