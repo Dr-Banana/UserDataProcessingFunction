@@ -20,11 +20,12 @@ def lambda_handler(event, context):
         action = body.get('action', '')
 
         if action == 'predict':
-            input_text = body.get('input_text', '')
             user_id = body.get('UserID', '')
+            eventID = body.get('EventID', '')
+            input_text = body.get('input_text', '')
             if not input_text or not user_id:
                 return generate_response(400, {'error': f'Invalid input: input_text={input_text}, UserID={user_id}'})
-            return handle_predict(input_text, user_id)
+            return handle_predict(user_id, eventID, input_text)
         elif action == 'update':
             user_id = body.get('UserID', '')
             eventID = body.get('EventID', '')
@@ -48,17 +49,6 @@ def generate_response(status_code, body):
         'body': json.dumps(body)
     }
 
-def handle_predict(input_text, user_id):
-    try:
-        eventID = str(uuid.uuid4())
-        processed_content = predict(input_text)
-        save_result_to_s3(user_id, eventID, processed_content)
-        # save_result_to_dynamodb(user_id, eventID, processed_content)
-        return generate_response(200, {'content': processed_content})
-    except RuntimeError as e:
-        logger.error(str(e))
-        return generate_response(500, {'error': str(e)})
-
 def predict(input_text):
     sagemaker_handler = SageMakerHandler(ENDPOINT_NAME)
     input_data_json = get_input_data_json(PRESET_PROMPT, input_text, PARAMETERS)
@@ -72,22 +62,16 @@ def predict(input_text):
         logger.error(f"Error during prediction: {str(e)}")
         raise RuntimeError(f"Prediction failed: {str(e)}")
 
-def save_result_to_s3(user_id, eventID, processed_content):
-    s3_key = f"{user_id}/{eventID}.json"
+def handle_predict(user_id, eventID, input_text):
     try:
-        save_to_s3(OUTPUT_BUCKET_NAME, s3_key, json.dumps(processed_content))
-        logger.info('Saved cleaned result to S3: %s/%s', OUTPUT_BUCKET_NAME, s3_key)
-    except Exception as e:
-        logger.error(f"Error saving to S3: {str(e)}")
-        raise RuntimeError(f"Saving to S3 failed: {str(e)}")
-
-def save_result_to_dynamodb(user_id, eventID, processed_content):
-    try:
-        dynamodb_handler.update_item(user_id, eventID, processed_content)
-        logger.info('Saved result to DynamoDB for UserID: %s', user_id)
-    except Exception as e:
-        logger.error(f"Error saving to DynamoDB: {str(e)}")
-        raise RuntimeError(f"Saving to DynamoDB failed: {str(e)}")
+        eventID = user_id
+        processed_content = predict(input_text)
+        save_result_to_s3(user_id, eventID, processed_content)
+        # save_result_to_dynamodb(user_id, eventID, processed_content)
+        return generate_response(200, {'content': processed_content})
+    except RuntimeError as e:
+        logger.error(str(e))
+        return generate_response(500, {'error': str(e)})
     
 def handle_clarification(user_id, eventID, updated_content):
     try:
@@ -112,3 +96,20 @@ def handle_clarification(user_id, eventID, updated_content):
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
         return generate_response(500, {'error': str(e)})
+
+def save_result_to_s3(user_id, eventID, processed_content):
+    s3_key = f"{user_id}/{eventID}.json"
+    try:
+        save_to_s3(OUTPUT_BUCKET_NAME, s3_key, json.dumps(processed_content))
+        logger.info('Saved cleaned result to S3: %s/%s', OUTPUT_BUCKET_NAME, s3_key)
+    except Exception as e:
+        logger.error(f"Error saving to S3: {str(e)}")
+        raise RuntimeError(f"Saving to S3 failed: {str(e)}")
+
+def save_result_to_dynamodb(user_id, eventID, processed_content):
+    try:
+        dynamodb_handler.update_item(user_id, eventID, processed_content)
+        logger.info('Saved result to DynamoDB for UserID: %s', user_id)
+    except Exception as e:
+        logger.error(f"Error saving to DynamoDB: {str(e)}")
+        raise RuntimeError(f"Saving to DynamoDB failed: {str(e)}")
