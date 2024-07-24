@@ -89,8 +89,11 @@ def handle_clarification(user_id, event_id, input_text):
     current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
 
     # 构建组合文本
-    combine_text = f'{{user: {input_text}, json: {current_content}}}'
-    logger.info('event: %s',type(combine_text))
+    combine_text = json.dumps({
+        "user": input_text,
+        "json": current_content
+    })
+    logger.info('event: %s',combine_text)
     try:
         # 从 S3 下载当前对话的结果
         processed_content = predict(combine_text, "update")
