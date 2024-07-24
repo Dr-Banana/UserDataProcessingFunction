@@ -91,12 +91,19 @@ def handle_clarification(user_id, event_id, input_text):
             return generate_response(404, {'error': 'Event not found'})
 
         # send to llama to update json
-        combine_text = f'{{user: "{input_text}", json: {json.dumps(current_content)}}}'
+        if isinstance(input_text, dict):
+            input_text = json.dumps(input_text)
+
+        # 构建组合文本
+        combine_text = json.dumps({
+            "user": input_text,
+            "json": current_content
+        })
         logger.info('input combine_text: %s', combine_text)
-        print(('input combine_text: %s', combine_text))
+        print(('input combine_text:', combine_text))
         processed_content = predict(combine_text, "update")
         logger.info('output text %s', processed_content)
-        print('output text %s', processed_content)
+        print('output text', processed_content)
         save_result_to_s3(user_id, event_id, processed_content)
         return generate_response(200, current_content)
     except Exception as e:
