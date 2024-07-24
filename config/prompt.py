@@ -36,4 +36,5 @@ Example input:
 Expected output:
 {"brief": "Tonight dinner", "time": "None", "place": "KFC", "people": "Me", "date": "today"}
 
+Always return the result in the format {"brief": "xxx", "time": "xxx", "place": "xxx", "people": "xxx", "date": "xxx"}. From the Example above the anwer you will return is just {"brief": "Tonight dinner", "time": "None", "place": "KFC", "people": "Me", "date": "today"}
 Now, please process the following input and provide the updated JSON:"""

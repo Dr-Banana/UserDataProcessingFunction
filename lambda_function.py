@@ -87,7 +87,6 @@ def handle_predict(user_id, event_id, input_text):
 def handle_clarification(user_id, event_id, input_text):
     s3_key = f"{user_id}/{event_id}.json"
     current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
-    logger.info('event: %s',current_content)
     current_content = json.dumps(current_content)
     # current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
 
@@ -96,11 +95,8 @@ def handle_clarification(user_id, event_id, input_text):
         "user": input_text,
         "json": current_content
     })
-    logger.info('event: %s',combine_text)
     # combine_text = input_text
     try:
-        # 从 S3 下载当前对话的结果
-        logger.info('update text: %s', combine_text)
         processed_content = predict(combine_text, "update")
         save_result_to_s3(user_id, event_id, processed_content)
         return generate_response(200, {'content': processed_content})
