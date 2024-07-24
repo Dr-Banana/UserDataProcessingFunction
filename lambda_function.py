@@ -28,8 +28,8 @@ def lambda_handler(event, context):
         elif action == 'update':
             user_id = body.get('UserID', '')
             eventID = body.get('EventID', '')
-            updated_content = body.get('Updated_content', {})
-            return handle_clarification(user_id, eventID, updated_content)
+            input_text = body.get('Updated_content', {})
+            return handle_clarification(user_id, eventID, input_text)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
         else:
