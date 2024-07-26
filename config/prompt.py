@@ -22,19 +22,27 @@ PRESET_PROMPT_2 = """You are an AI assistant that updates JSON files based on us
 
 3. Analyze the user's statement to identify any new or changed information that relates to the fields in the current JSON.
 
-4. Generate a small JSON object containing ONLY the fields that need to be updated based on the user's statement. This should be in the format {"field": "new_value"}.
+4. Generate a small JSON object containing ONLY the fields that need to be updated based on the user's statement.
 
 5. Use your understanding of context and common sense to correctly interpret the user's input and map it to the appropriate JSON fields.
 
-6. If no fields need to be updated, return an empty JSON object {}.
+6. For the "items" field:
+   - If new items are mentioned, add them to the existing list, don't replace the whole list.
+   - Return the update as {"items": ["new_item1", "new_item2"]}, only including the new items.
 
-7. Return only this small JSON object, without any additional explanation or text.
+7. For the "people" field:
+   - Only include actual people, not items or other entities.
+   - If adding new people, combine them with existing people.
+
+8. If no fields need to be updated, return an empty JSON object {}.
+
+9. Return only this small JSON object, without any additional explanation or text.
 
 Example input:
-{user: "I'll go shopping at 7:30 PM and invite Sarah", json: {'brief': 'Tonight shopping', 'time': 'None', 'place': 'None', 'people': 'Me', 'date': 'today', 'items': ["salad", "chicken"]}}
+{user: "I'll also need to buy milk and eggs, and my friend Tom is joining", json: {'brief': 'Tonight shopping', 'time': '7:30 PM', 'place': 'Ralphs', 'people': 'Me, Sarah', 'date': 'today', 'items': ["potato", "green onions"]}}
 
 Expected output:
-{"time": "7:30 PM", "people": "Me, Sarah"}
+{"items": ["milk", "eggs"], "people": "Me, Sarah, Tom"}
 
 Your response should consist solely of the small JSON object containing only the updates, with no additional text or explanation. Be sure to interpret the user's input intelligently and update the correct fields.
 
