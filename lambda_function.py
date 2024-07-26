@@ -19,17 +19,15 @@ def lambda_handler(event, context):
     try:
         body = parse_event(event)
         action = body.get('action', '')
+        user_id = body.get('UserID', '')
+        event_id = body.get('EventID', '')
+        input_text = body.get('Input_text', '')
 
         if action == 'predict':
-            user_id = body.get('UserID', '')
-            event_id = body.get('EventID', '')
-            input_text = body.get('Input_text', '')
             return handle_predict(user_id, event_id, input_text)
         elif action == 'update':
-            user_id = body.get('UserID', '')
-            event_id = body.get('EventID', '')
-            input_text = body.get('Input_text', '')
-            return handle_clarification(user_id, event_id, input_text)
+            json_content = body.get('Json_content', '')
+            return handle_clarification(user_id, event_id, input_text, json_content)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
         else:
@@ -70,8 +68,8 @@ def predict(input_text, action):
     except Exception as e:
         logger.error(f"Error during prediction: {str(e)}")
         return generate_response(100, {'error': "prediction error in sagemaker_handler.predict(input_data_json)"})
-    processed_content = process_json(result)
-    return processed_content
+    # processed_content = process_json(result)
+    return result
 
 def handle_predict(user_id, event_id, input_text):
     try:
@@ -84,18 +82,16 @@ def handle_predict(user_id, event_id, input_text):
         logger.error(str(e))
         return generate_response(101, {'error': str(e)})
     
-def handle_clarification(user_id, event_id, input_text):
-    s3_key = f"{user_id}/{event_id}.json"
-    current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
-    current_content = json.dumps(current_content)
-    # current_content = """{"brief": "Dinner with Sarah","time": "7 PM","place": "Luigi's Restaurant","people": "I, Sarah","date": "tomorrow"}"""
+def handle_clarification(user_id, event_id, input_text, json_content):
+    # s3_key = f"{user_id}/{event_id}.json"
+    # current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
+    # current_content = json.dumps(current_content)
 
-    # # 构建组合文本
     combine_text = json.dumps({
         "user": input_text,
-        "json": current_content
+        "json": json_content
     })
-    # combine_text = input_text
+
     try:
         processed_content = predict(combine_text, "update")
         save_result_to_s3(user_id, event_id, processed_content)
