@@ -95,7 +95,7 @@ def handle_clarification(user_id, event_id, input_text, json_content):
     try:
         processed_content = predict(combine_text, "update")
         save_result_to_s3(user_id, event_id, processed_content)
-        return generate_response(200, {'content': processed_content})
+        return generate_response(200, processed_content)
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
         return generate_response(400, {'error': str(e)})
