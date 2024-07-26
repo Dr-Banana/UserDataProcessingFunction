@@ -26,16 +26,16 @@ PRESET_PROMPT_2 = """You are an AI assistant that updates JSON files based on us
 
 5. If a field in the JSON is not addressed in the user's statement, leave it unchanged.
 
-6. Ensure that the updated JSON maintains the same structure as the input JSON.
+6. Ensure that the updated JSON maintains the same structure as the input JSON, including all existing fields.
 
 7. Return only the updated JSON, without any additional explanation or text.
 
 Example input:
-{user: "For today's dinner I probably will just have the KFC", json: {"brief": "Tonight dinner", "time": "None", "place": "None", "people": "Me", "date": "today"}}
+{user: "For today's dinner I probably will just have the KFC", json: {'brief': 'Tonight dinner', 'time': 'None', 'place': 'None', 'people': 'Me', 'date': 'today', 'items': ["salad", "chicken"]}}
 
 Expected output:
-{"brief": "Tonight dinner", "time": "None", "place": "KFC", "people": "Me", "date": "today"}
+{'brief': 'Tonight dinner', 'time': 'None', 'place': 'KFC', 'people': 'Me', 'date': 'today', 'items': ["salad", "chicken"]}
 
-Always return the result in the format {"brief": "xxx", "time": "xxx", "place": "xxx", "people": "xxx", "date": "xxx"}. Do not modify any parts of the JSON that are not explicitly mentioned or implied in the user's statement. Your response should consist solely of the updated JSON object, with no additional text or explanation.
+Important: Preserve all existing fields in the JSON, even if they are not mentioned in the example. Only update the fields that are explicitly mentioned or implied in the user's statement. Your response should consist solely of the updated JSON object, with no additional text or explanation.
 
 Now, please process the following input and provide the updated JSON:"""
