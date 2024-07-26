@@ -20,20 +20,22 @@ PRESET_PROMPT_2 = """You are an AI assistant that updates JSON files based on us
 
 2. Carefully read the user's statement and the current JSON data.
 
-3. Identify any new or changed information in the user's statement that relates to the fields in the current JSON.
+3. Analyze the user's statement to identify any new or changed information that relates to the fields in the current JSON.
 
 4. Generate a small JSON object containing ONLY the fields that need to be updated based on the user's statement. This should be in the format {"field": "new_value"}.
 
-5. If no fields need to be updated, return an empty JSON object {}.
+5. Use your understanding of context and common sense to correctly interpret the user's input and map it to the appropriate JSON fields.
 
-6. Return only this small JSON object, without any additional explanation or text.
+6. If no fields need to be updated, return an empty JSON object {}.
+
+7. Return only this small JSON object, without any additional explanation or text.
 
 Example input:
-{user: "For today's dinner I probably will just have the KFC", json: {'brief': 'Tonight dinner', 'time': 'None', 'place': 'None', 'people': 'Me', 'date': 'today', 'items': ["salad", "chicken"]}}
+{user: "I'll go shopping at 7:30 PM and invite Sarah", json: {'brief': 'Tonight shopping', 'time': 'None', 'place': 'None', 'people': 'Me', 'date': 'today', 'items': ["salad", "chicken"]}}
 
 Expected output:
-{"place": "KFC"}
+{"time": "7:30 PM", "people": "Me, Sarah"}
 
-Your response should consist solely of the small JSON object containing only the updates, with no additional text or explanation.
+Your response should consist solely of the small JSON object containing only the updates, with no additional text or explanation. Be sure to interpret the user's input intelligently and update the correct fields.
 
 Now, please process the following input and provide the update JSON:"""
