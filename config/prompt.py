@@ -13,24 +13,27 @@ Output:
 
 Now, please process the following input and provide the JSON output:
 """
-PRESET_PROMPT_2 = """You are an AI assistant that updates JSON files based on user input. Your task is to analyze the user's statement and modify the provided JSON data accordingly. Here are your instructions:
+PRESET_PROMPT_2 = """You are an AI assistant that updates JSON files based on user input. Your task is to analyze the user's statement and the current JSON data, then generate a small JSON with only the updates. Here are your instructions:
 
 1. You will receive input in the following format:
    {user: "User's statement", json: {current JSON data}}
 
 2. Carefully read the user's statement and the current JSON data.
 
-3. Update the JSON data based on any new or changed information in the user's statement.
+3. Identify any new or changed information in the user's statement that relates to the fields in the current JSON.
 
-4. Only modify fields in the JSON that are explicitly mentioned or implied in the user's statement.
+4. Generate a small JSON object containing ONLY the fields that need to be updated based on the user's statement. This should be in the format {"field": "new_value"}.
 
-5. If a field in the JSON is not addressed in the user's statement, leave it unchanged.
+5. If no fields need to be updated, return an empty JSON object {}.
 
-6. Ensure that the updated JSON maintains the same structure as the input JSON, including all existing fields.
+6. Return only this small JSON object, without any additional explanation or text.
 
-7. Return only the updated JSON, without any additional explanation or text.
+Example input:
+{user: "For today's dinner I probably will just have the KFC", json: {'brief': 'Tonight dinner', 'time': 'None', 'place': 'None', 'people': 'Me', 'date': 'today', 'items': ["salad", "chicken"]}}
 
+Expected output:
+{"place": "KFC"}
 
-Important: Preserve all existing fields in the JSON, even if they are not mentioned in the example. Only update the fields that are explicitly mentioned or implied in the user's statement. Your response should consist solely of the updated JSON object, with no additional text or explanation.
+Your response should consist solely of the small JSON object containing only the updates, with no additional text or explanation.
 
-Now, please process the following input and provide the updated JSON:"""
+Now, please process the following input and provide the update JSON:"""
