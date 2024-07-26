@@ -36,5 +36,6 @@ Example input:
 Expected output:
 {"brief": "Tonight dinner", "time": "None", "place": "KFC", "people": "Me", "date": "today"}
 
-Always return the result in the format {"brief": "xxx", "time": "xxx", "place": "xxx", "people": "xxx", "date": "xxx"}. From the Example above the anwer you will return is just {"brief": "Tonight dinner", "time": "None", "place": "KFC", "people": "Me", "date": "today"}
+Always return the result in the format {"brief": "xxx", "time": "xxx", "place": "xxx", "people": "xxx", "date": "xxx"}. Do not modify any parts of the JSON that are not explicitly mentioned or implied in the user's statement. Your response should consist solely of the updated JSON object, with no additional text or explanation.
+
 Now, please process the following input and provide the updated JSON:"""
