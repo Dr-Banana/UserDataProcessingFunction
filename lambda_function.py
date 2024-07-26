@@ -77,7 +77,7 @@ def handle_predict(user_id, event_id, input_text):
         processed_content = predict(input_text, "predict")
         save_result_to_s3(user_id, event_id, processed_content)
         # save_result_to_dynamodb(user_id, event_id, processed_content)
-        return generate_response(200, {'content': processed_content})
+        return generate_response(200, processed_content)
     except RuntimeError as e:
         logger.error(str(e))
         return generate_response(101, {'error': str(e)})
