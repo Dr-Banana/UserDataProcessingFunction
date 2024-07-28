@@ -23,11 +23,13 @@ def lambda_handler(event, context):
         event_id = body.get('EventID', '')
         input_text = body.get('Input_text', '')
 
-        if action == 'predict':
+        if action == 'classify':
+            return handle_classify(user_id, event_id, input_text)
+        elif action == 'predict':
             return handle_predict(user_id, event_id, input_text)
         elif action == 'update':
             json_content = body.get('Json_content', '')
-            return handle_clarification(user_id, event_id, input_text, json_content)
+            return handle_update(user_id, event_id, input_text, json_content)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
         else:
@@ -71,6 +73,10 @@ def predict(input_text, action):
     # processed_content = process_json(result)
     return result
 
+def handle_classify(user_id, event_id, input_text):
+    # modify classification code here
+    return 0
+
 def handle_predict(user_id, event_id, input_text):
     try:
         logger.info('predict text: %s', input_text)
@@ -82,7 +88,8 @@ def handle_predict(user_id, event_id, input_text):
         logger.error(str(e))
         return generate_response(101, {'error': str(e)})
     
-def handle_clarification(user_id, event_id, input_text, json_content):
+    
+def handle_update(user_id, event_id, input_text, json_content):
     # s3_key = f"{user_id}/{event_id}.json"
     # current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
     # current_content = json.dumps(current_content)
