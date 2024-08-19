@@ -90,13 +90,13 @@ def handle_predict(user_id, event_id, input_text):
     
     
 def handle_update(user_id, event_id, input_text, json_content):
-    # s3_key = f"{user_id}/{event_id}.json"
-    # current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
-    # current_content = json.dumps(current_content)
+    s3_key = f"{user_id}/{event_id}.json"
+    current_content = download_json_from_s3(OUTPUT_BUCKET_NAME, s3_key)
+    current_content = json.dumps(current_content)
 
     combine_text = json.dumps({
         "user": input_text,
-        "json": json_content
+        "json": current_content
     })
 
     try:
