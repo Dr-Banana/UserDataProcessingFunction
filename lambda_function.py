@@ -114,3 +114,4 @@ def save_result_to_dynamodb(user_id, eventID, processed_content):
     except Exception as e:
         logger.error(f"Error saving to DynamoDB: {str(e)}")
         raise RuntimeError(f"Saving to DynamoDB failed: {str(e)}")
+    
