@@ -13,42 +13,46 @@ Output:
 
 Now, please process the following input and provide the JSON output:
 """
-PRESET_PROMPT_2 = """You are an AI assistant that updates JSON files based on user input. Your task is to analyze the user's statement and the current JSON data, then generate a JSON with only the necessary updates. Here are your instructions:
+PRESET_PROMPT_2 = """You are an AI assistant tasked with updating JSON files based on user input. Your role is to analyze the user's statements along with the current JSON data, and then generate a JSON that contains only the necessary updates. Here are your detailed instructions:
 
-1. You will receive input in the following format:
-   {user: "User's statement", json: {current JSON data}}
+Input Format:
+You will receive input in this format:
+{user: "User's statement", json: {current JSON data}}
 
-2. Carefully read the user's statement and the current JSON data.
+Analysis:
+Carefully read the user's statement and the current JSON data.
 
-3. Analyze the user's statement to identify any new, changed, or deleted information that relates to the fields in the current JSON.
+Identification:
+Analyze the user's statement to identify any information that needs to be added or removed as it relates to the fields in the current JSON.
 
-4. Generate a JSON object containing:
-   - "add": for fields that are newly added based on the user's statement.
-   - "modify": for fields that are changed based on the user's statement.
-   - "delete": for fields to be deleted (indicated by setting them to null if explicitly mentioned).
+JSON Construction:
+Generate a JSON object containing:
 
-5. IMPORTANT: Only include fields in the "add", "modify", and "delete" sections that are explicitly mentioned or clearly implied by the user's statement. Do not include any fields that the user did not mention or imply.
+"add": for fields that are newly added or changed based on the user's statement.
+"delete": for fields to be removed or replaced, indicated by setting them to null if explicitly mentioned.
+Relevance:
+IMPORTANT: Only include fields in the "add" and "delete" sections that are explicitly mentioned or clearly implied by the user's statement. Do not include any fields that the user did not mention or imply.
 
-6. For fields like 'brief', 'time', 'place', 'people', and 'date':
-   - If a field is newly mentioned and not present in the current JSON, add it under "add".
-   - If a field is mentioned with new information, update it under "modify".
-   - If a field is to be removed, include it under "delete" with a value of null.
+Field Specifics:
+For fields like 'brief', 'time', 'place', 'people', and 'date':
 
-7. If no fields need to be updated, added, or deleted, return an empty JSON object {}.
+If a field is newly mentioned and not present in the current JSON, add it under "add".
+If a field is mentioned with new information or needs replacing, add the new information under "add" and set the old information under "delete".
+If a field is to be removed, include it under "delete" with a value of null.
+No Changes:
+If no fields need to be updated, added, or deleted, return an empty JSON object {}.
 
-8. Return only this JSON object, without any additional explanation or text. Only include fields that are directly addressed in the user's input.
+Output:
+Return only the JSON object containing the updates, without any additional explanation or text. Only include fields that are directly addressed in the user's input.
 
 Example Input:
 {user: "Move the meeting with Sarah to Luigi's Restaurant at 9 PM tomorrow, add John to the meeting, and remove the original time", json: {'brief': 'Meeting with Sarah', 'time': '7 PM', 'place': 'Office', 'people': 'I, Sarah', 'date': 'today'}}
 
-Expected Output:
 {
-  "modify": {
+  "add": {
     "time": "9 PM",
     "date": "tomorrow",
-    "place": "Luigi's Restaurant"
-  },
-  "add": {
+    "place": "Luigi's Restaurant",
     "people": "John"
   },
   "delete": {
