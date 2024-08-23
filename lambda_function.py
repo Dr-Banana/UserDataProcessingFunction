@@ -1,8 +1,7 @@
 import json
 import base64
 import uuid
-from config import preset_prompts, ENDPOINT_NAME, OUTPUT_BUCKET_NAME
-from config.templates import llama_template
+from config import preset_prompts, ENDPOINT_NAME, OUTPUT_BUCKET_NAME, llama_template
 from utils.logger import setup_logger
 from handlers.s3_handler import save_result_to_s3, download_json_from_s3
 from handlers.sagemaker_handler import SageMakerHandler
