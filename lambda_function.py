@@ -1,9 +1,8 @@
 import json
 import base64
 import uuid
-from config.config import ENDPOINT_NAME, PARAMETERS, OUTPUT_BUCKET_NAME
-from config.prompt import *
-from config.templates import get_input_data_json
+from config import preset_prompts, ENDPOINT_NAME, OUTPUT_BUCKET_NAME
+from config.templates import llama_template
 from utils.logger import setup_logger
 from handlers.s3_handler import save_result_to_s3, download_json_from_s3
 from handlers.sagemaker_handler import SageMakerHandler
@@ -25,11 +24,11 @@ def lambda_handler(event, context):
 
         if action == 'classify':
             return handle_classify(user_id, event_id, input_text)
-        elif action == 'predict':
-            return handle_predict(user_id, event_id, input_text)
         elif action == 'update':
             json_content = body.get('Json_content', '')
             return handle_update(user_id, event_id, input_text, json_content)
+        # elif action == 'predict':
+        #     return handle_predict(user_id, event_id, input_text)
         elif action == 'test':
             return generate_response(200, {'message': 'ENDPOINT connection test successful'})
         else:
@@ -49,28 +48,16 @@ def generate_response(status_code, body):
     }
 
 def predict(input_text, action):
-    try:
-        sagemaker_handler = SageMakerHandler(ENDPOINT_NAME)
-    except Exception as e:
-        logger.info("Endpoint connection error")
-        generate_response(503, {'error': 'Sagemaker Endpoint Connection Error'})
-        return None
+    sagemaker_handler = SageMakerHandler(ENDPOINT_NAME)
+    preset_prompt = preset_prompts.get(action, "")
     
-    preset_prompts = {
-        'predict': PRESET_PROMPT_1,
-        'update': PRESET_PROMPT_2
-    }
-
-    preset_prompt = preset_prompts.get(action, PRESET_PROMPT_1)
-    
-    input_data_json = get_input_data_json(preset_prompt, input_text, PARAMETERS)
+    input_data_json = llama_template(preset_prompt, input_text)
     try:
         result = sagemaker_handler.predict(input_data_json)
         logger.info('Result from prediction: %s', result)
     except Exception as e:
         logger.error(f"Error during prediction: {str(e)}")
         return generate_response(100, {'error': "prediction error in sagemaker_handler.predict(input_data_json)"})
-    # processed_content = process_json(result)
     return result
 
 def handle_classify(user_id, event_id, input_text):
@@ -79,15 +66,13 @@ def handle_classify(user_id, event_id, input_text):
 
 def handle_predict(user_id, event_id, input_text):
     try:
-        logger.info('predict text: %s', input_text)
         processed_content = predict(input_text, "predict")
-        save_result_to_s3(user_id, event_id, processed_content)
+        # save_result_to_s3(user_id, event_id, processed_content)
         # save_result_to_dynamodb(user_id, event_id, processed_content)
         return generate_response(200, processed_content)
     except RuntimeError as e:
         logger.error(str(e))
-        return generate_response(101, {'error': str(e)})
-    
+        return generate_response(400, {'error': str(e)})
     
 def handle_update(user_id, event_id, input_text, json_content):
     # s3_key = f"{user_id}/{event_id}.json"
@@ -101,7 +86,7 @@ def handle_update(user_id, event_id, input_text, json_content):
 
     try:
         processed_content = predict(combine_text, "update")
-        save_result_to_s3(user_id, event_id, processed_content)
+        # save_result_to_s3(user_id, event_id, processed_content)
         return generate_response(200, processed_content)
     except Exception as e:
         logger.error(f"Error during clarification: {str(e)}")
